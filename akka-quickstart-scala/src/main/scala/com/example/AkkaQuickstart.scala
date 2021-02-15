@@ -1,12 +1,12 @@
 //#full-example
 package com.example
 
-
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import com.example.GreeterMain.SayHello
+import com.example.actors.Node
 
 //#greeter-actor
 object Greeter {
@@ -68,13 +68,25 @@ object GreeterMain {
 
 //#main-class
 object AkkaQuickstart extends App {
-  //#actor-system
-  val greeterMain: ActorSystem[GreeterMain.SayHello] = ActorSystem(GreeterMain(), "AkkaQuickStart")
-  //#actor-system
+//  //#actor-system
+//  val greeterMain: ActorSystem[GreeterMain.SayHello] = ActorSystem(GreeterMain(), "AkkaQuickStart")
+//  //#actor-system
+//
+//  //#main-send-messages
+//  greeterMain ! SayHello("Charles")
+//  //#main-send-messages
 
-  //#main-send-messages
-  greeterMain ! SayHello("Charles")
-  //#main-send-messages
+    val tree: TreeNode = TreeHelper.initATree()
+    val node = new Node(tree)
+
+    //#actor-system
+    val system: ActorSystem[node.PrintGraph] = ActorSystem(node, "AkkaQuickStart")
+    //#actor-system
+
+    //#main-send-messages
+    system ! PrintGraph()
+    //#main-send-messages
+
 }
 //#main-class
 //#full-example

@@ -7,7 +7,7 @@ import com.example.TreeNode
 class Node(val node: TreeNode) {
 
 //  final case class SolveTree(whom: String, replyTo: ActorRef)
-  final case class PrintGraph(whom: String)
+  final case class PrintGraph()
 
 
 //  def apply(): Behavior[SolveTree] = Behaviors.receive { (context, message) =>
@@ -26,8 +26,10 @@ class Node(val node: TreeNode) {
       )
     )
 
-    node.childeren.foreach( node =>
-      context.spawn(this.apply(), node.id.toString)
+    node.childeren.foreach( node => {
+        val child_node = context.spawn(this.apply(), node.id.toString)
+        child_node ! PrintGraph()
+      }
     )
     Behaviors.same
   }
