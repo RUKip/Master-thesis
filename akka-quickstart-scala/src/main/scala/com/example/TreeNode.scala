@@ -2,7 +2,7 @@ package com.example
 
 //For the graph coloring problem
 class TreeNode(val id: Int, val parent: TreeNode) {
-  var childeren: Seq[TreeNode] = Array()
+  var childeren: Seq[TreeNode] = Seq()
   var color: String = "Blank"
 
   if (parent != null) {
