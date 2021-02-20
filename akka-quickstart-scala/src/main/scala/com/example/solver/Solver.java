@@ -20,10 +20,8 @@ public class Solver {
         SetVar node_color =  model.setVar("Color_"+node.id(), color_options.values());
 
         //Create constraints
-        int i=0;
         for (TreeNode connected_node : node.children()) {
             model.arithm(node_color, "!=",connected_node.color()).post();
-            i++;
         }
 
         //Solve
@@ -32,5 +30,6 @@ public class Solver {
             System.out.println(solution.toString());
         }
 
+        return solution.toString();
     }
 }

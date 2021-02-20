@@ -28,7 +28,7 @@ object Node {
     })
     //Solve COP for this subtree here (using something like choco solver?)
 
-    //Wait for messages from children (depends on what implementation of solver, but for example see hybrid-backtracking paper could message good/no-good)
+    //Wait for messages from children (depends on what implementation of solver, but for example see hybrid-backtracking paper could be message good/no-good)
 
 
     Behaviors.same
