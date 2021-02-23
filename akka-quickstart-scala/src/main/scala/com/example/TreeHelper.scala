@@ -19,10 +19,10 @@ object TreeHelper {
     val node3 = TreeNode(3, root, List(4), "Blank")
     val node4 = TreeNode(4, node3, List(), "Blank")
 
-    mapping + (1 -> root)
-    mapping + (2 -> node2)
-    mapping + (3 -> node3)
-    mapping + (4 -> node4)
+    mapping += (1 -> root)
+    mapping += (2 -> node2)
+    mapping += (3 -> node3)
+    mapping += (4 -> node4)
 
     (root, mapping)
   }

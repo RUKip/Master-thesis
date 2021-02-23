@@ -1,4 +1,3 @@
-//#full-example
 package com.example
 
 import akka.actor.typed.scaladsl.Behaviors
@@ -14,9 +13,9 @@ object AkkaQuickstart extends App {
     val ports = Seq(25251, 25252, 0)
     ports.foreach(startup)
 
-
     //Startup agents
     val (tree, mapping): (TreeNode, Map[Int, TreeNode]) = TreeHelper.initATree()
+
     val system: ActorSystem[Node.PrintGraph] = ActorSystem(Node(tree, mapping), "AkkaQuickStart")
 
     system ! Node.PrintGraph()
