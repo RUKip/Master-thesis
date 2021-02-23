@@ -12,18 +12,16 @@ class Node() {
 object Node {
   final case class PrintGraph()
 
-  def apply(node: TreeNode): Behavior[PrintGraph] = Behaviors.receive { (context, message) =>
+  def apply(node: TreeNode, mapping: Map[Int, TreeNode]): Behavior[PrintGraph] = Behaviors.receive { (context, message) =>
     context.log.info(
       "Node {}, has color: {}, children: {}",
       node.id,
       node.color,
-      node.children.map(
-        (child: TreeNode) => child.id
-      )
+      node.children_ids
     )
 
-    node.children.foreach( child => {
-      val child_node = context.spawn(Node(child), child.id.toString)
+    node.children_ids.foreach( child_id => {
+      val child_node = context.spawn(Node(mapping(child_id), mapping), child_id.toString)
       child_node ! PrintGraph()
     })
     //Solve COP for this subtree here (using something like choco solver?)

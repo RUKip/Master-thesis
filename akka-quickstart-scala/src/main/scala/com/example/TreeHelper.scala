@@ -11,19 +11,19 @@ object TreeHelper {
                4
 
    */
-  def initATree(): TreeNode = {
-    var map: Map[Int, TreeNode] = Map()
+  def initATree(): (TreeNode, Map[Int, TreeNode]) = {
+    var mapping: Map[Int, TreeNode] = Map()
 
-    val root = TreeNode(1, null, Seq(2, 3), "Blank")
-    val node2 = TreeNode(2, root, Seq(), "Blank")
-    val node3 = TreeNode(3, root, Seq(4), "Blank")
-    val node4 = TreeNode(4, node3, Seq(), "Blank")
+    val root = TreeNode(1, null, List(2, 3), "Blank")
+    val node2 = TreeNode(2, root, List(), "Blank")
+    val node3 = TreeNode(3, root, List(4), "Blank")
+    val node4 = TreeNode(4, node3, List(), "Blank")
 
-    map + (1 -> root)
-    map + (2 -> node2)
-    map + (3 -> node3)
-    map + (4 -> node4)
+    mapping + (1 -> root)
+    mapping + (2 -> node2)
+    mapping + (3 -> node3)
+    mapping + (4 -> node4)
 
-    root
+    (root, mapping)
   }
 }
