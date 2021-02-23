@@ -1,8 +1,8 @@
 package com.example
 
-import scala.collection.mutable
-
 object TreeHelper {
+
+  //TODO: this should be using the graph and HypertreeDecomposition equal to the graphs in the images folder
 
   /* Graph structure like:
 
