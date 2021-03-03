@@ -1,4 +1,6 @@
 package com.example
 
-//For the graph coloring problem
-case class TreeNode(id: Int, parent: TreeNode, children_ids: List[Int], color: String)
+//For the decomposition of the graph
+case class TreeNode(id: Int, parent: TreeNode, childeren: List[Int], graph_variables: List[Int]) {
+
+}
