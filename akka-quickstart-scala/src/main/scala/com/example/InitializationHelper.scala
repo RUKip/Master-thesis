@@ -33,6 +33,13 @@ object InitializationHelper {
     mapping
   }
 
+  /* TODO: what about differentiating between GraphNodes in a Tree decomposition that are (parent/child/un) connected?
+      Parent nodes can only be initialized by signal (actor message) from parent node
+      Child nodes when initialized need to send an actor message to their respective connected graph nodes in other Tree nodes
+      Unconnected can be possibly already pre-initialized without waiting
+  */
+
+
   /* Decomposition of graph:
       (2,3,4)
        /   \
@@ -40,13 +47,13 @@ object InitializationHelper {
       |
    (4,5,6)
  */
-  def getHTD(): (TreeNode, Map[Int, TreeNode]) = {
+  def getHTD(graph_mapping: Map[Int, GraphNode]): (TreeNode, Map[Int, TreeNode]) = {
     var mapping: Map[Int, TreeNode] = Map()
 
-    val root = TreeNode(1, null, List(2, 3), List(2,3,4))
-    val node2 = TreeNode(2, root, List(4), List(3,4,5))
-    val node3 = TreeNode(3, root, List(), List(1,2))
-    val node4 = TreeNode(4, node3, List(), List(4,5,6))
+    val root = TreeNode(1, null, List(2, 3), List(2,3,4), graph_mapping)
+    val node2 = TreeNode(2, root, List(4), List(3,4,5), graph_mapping)
+    val node3 = TreeNode(3, root, List(), List(1,2), graph_mapping)
+    val node4 = TreeNode(4, node3, List(), List(4,5,6), graph_mapping)
 
     mapping += (1 -> root)
     mapping += (2 -> node2)

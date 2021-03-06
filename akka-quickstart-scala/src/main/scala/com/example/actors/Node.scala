@@ -3,7 +3,7 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.ClusterEvent.MemberEvent
-import com.example.GraphNode
+import com.example.{GraphNode, TreeNode}
 
 //This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)
 class Node() {
@@ -15,12 +15,13 @@ object Node {
   final case class PrintGraph()
   private final case class MemberChange(event: MemberEvent) extends Event
 
-  def apply(node: GraphNode, mapping: Map[Int, GraphNode]): Behavior[PrintGraph] = Behaviors.receive { (context, message) =>
+  def apply(node: TreeNode): Behavior[PrintGraph] = Behaviors.receive { (context, message) =>
     context.log.info(
-      "Node {}, has color: {}, connected: {}, path: {}",
+      "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path: {}",
       node.id,
-      node.color,
-      node.connected_ids,
+      node.graph_variables,
+      node.parent,
+      node.tree_childeren,
       context.self.path,
 
     )
