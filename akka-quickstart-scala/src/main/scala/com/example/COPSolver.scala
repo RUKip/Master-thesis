@@ -20,7 +20,9 @@ object COPSolver extends App {
     //Startup cluster?
     //This matches with the config file
     val ports = Seq(25251, 25252, 0)
-    val divided_nodes = tree_decomposition.values.toSeq.grouped((tree_decomposition.values.size / ports.length))
+    val divided_nodes = tree_decomposition.values.toSeq.grouped(
+        math.ceil(tree_decomposition.values.size.doubleValue() / ports.length.doubleValue()).toInt
+    )
     val cluster_divided_nodes: Seq[(Int, Seq[TreeNode])] = ports zip divided_nodes
 
     cluster_divided_nodes.foreach {

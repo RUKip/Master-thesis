@@ -1,9 +1,9 @@
 package com.example.actors
 
-import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.ClusterEvent.MemberEvent
-import com.example.{GraphNode, TreeNode}
+import com.example.TreeNode
 
 //This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)
 class Node() {
@@ -20,7 +20,7 @@ object Node {
       "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path: {}",
       node.id,
       node.graph_variables,
-      node.parent,
+      if (node.parent == null)  0  else node.parent.id,
       node.tree_childeren,
       context.self.path,
 
