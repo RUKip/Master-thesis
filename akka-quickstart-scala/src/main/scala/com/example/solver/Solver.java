@@ -6,10 +6,11 @@ import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.variables.IntVar;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class Solver {
 
-    public String solve(GraphNode node, HashMap<Integer, GraphNode> mapping)
+     public static String solve(List<GraphNode> nodes, HashMap<Integer, GraphNode> mapping)
     {
         HashMap<String, Integer> color_options = new HashMap<>();
         color_options.put("red", 1);
@@ -18,13 +19,15 @@ public class Solver {
 
         Model model = new Model("Graph coloring problem");
 
-        //Create variable to calculate (the color of the node)
-        IntVar node_color =  model.intVar("Color_"+node.id(), color_options.values().stream().mapToInt(Integer::intValue).toArray());
+        for (GraphNode node : nodes) {
+            //Create variable to calculate (the color of the node)
+            IntVar node_color =  model.intVar("Color_"+node.id(), color_options.values().stream().mapToInt(Integer::intValue).toArray());
 
-        //Create constraints TODO: not sure yet how to convert here scala to java
-        for (Integer id : node.connectedAsJava()) {
-            GraphNode connected_node = mapping.get(id);
-            model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();
+            //Create constraints
+            for (Integer id : node.connectedAsJava()) {
+                GraphNode connected_node = mapping.get(id);
+                model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();
+            }
         }
 
         //Solve

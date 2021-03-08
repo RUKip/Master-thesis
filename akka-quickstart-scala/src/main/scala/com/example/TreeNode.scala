@@ -1,7 +1,15 @@
 package com.example
 
 //For the decomposition of the graph
-case class TreeNode(id: Int, parent: TreeNode, tree_childeren: List[Int], graph_variables: List[Int], full_graph_mapping: Map[Int, GraphNode]) {
+case class TreeNode(
+                     id: Int,
+                     parent: TreeNode,
+                     tree_childeren: List[Int],
+                     graph_variables: List[Int],
+                     full_graph_mapping: Map[Int, GraphNode],
+                     parent_connected: List[Int],
+                     child_connected: List[Int]
+                   ) {
 
   def getGraphNodes: Seq[GraphNode] = {
     graph_variables.map((variable) => {

@@ -15,11 +15,9 @@ object COPSolver extends App {
 
     //Initialize based on tree decomposition (here also use cluster)
 
-
-
     //Startup cluster?
     //This matches with the config file
-    val ports = Seq(25251, 25252, 0)
+    val ports = Seq(25251, 25252)
     val divided_nodes = tree_decomposition.values.toSeq.grouped(
         math.ceil(tree_decomposition.values.size.doubleValue() / ports.length.doubleValue()).toInt
     )
@@ -29,9 +27,6 @@ object COPSolver extends App {
         case (port, tree_nodes) => startup(port, tree_nodes)
     }
 
-    //TODO: here split up graph over cluster and start cluster and init
-
-
   //Divide here the nodes over the cluster based on tree-decomposition
     def startup(port: Int, tree_nodes: Seq[TreeNode]): Unit = {
         // Override the configuration of the port
@@ -40,14 +35,13 @@ object COPSolver extends App {
       """).withFallback(ConfigFactory.load())
 
         // Create an Akka system
-        val system: ActorSystem[Node.PrintGraph] = ActorSystem(RootBehavior(tree_nodes), name= "COPSolver", config = config)
+        val system: ActorSystem[Node.Event] = ActorSystem(RootBehavior(tree_nodes), name= "COPSolver", config = config)
 
-      //TODO: here should start the algorithm of init + smart backtracking
     }
 
     object RootBehavior {
-        def apply(tree_nodes: Seq[TreeNode]): Behavior[Node.PrintGraph] = Behaviors.setup[Node.PrintGraph] { context =>
-            // Create an actor that handles cluster domain events
+        def apply(tree_nodes: Seq[TreeNode]): Behavior[Node.Event] = Behaviors.setup[Node.Event] { context =>
+            //TODO: here should start the algorithm of init + smart backtracking
             tree_nodes.foreach(tree_node => {
                     val actor = context.spawn(Node(tree_node), tree_node.id.toString)
                     actor ! Node.PrintGraph()
