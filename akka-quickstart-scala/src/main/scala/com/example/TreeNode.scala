@@ -24,7 +24,18 @@ case class TreeNode(
   //Here making assumption of connectivity, we can assume that all graph_variables are connected else the decomposition is wrong
   def getNewSubGraph: Seq[GraphNode] = {
     graph_variables.map((variable) => {
-      GraphNode(variable, graph_variables, "Blank");
+      val color = full_graph_mapping.getOrElse(variable, GraphNode(variable, graph_variables, "Blank")).color;
+      GraphNode(variable, graph_variables, color);
     })
+  }
+
+  //Update the color of all nodes given a color mapping, update happens by updating the full_graph_mapping
+  def updateNodes(color_mapping: Map[Int, String]): TreeNode ={
+    val graph_mapping = this.full_graph_mapping map {
+      case (graph_node_id, graphNode) => (
+        graph_node_id,
+        graphNode.copy(color=color_mapping.getOrElse(graph_node_id, graphNode.color))
+      )}
+    this.copy(full_graph_mapping = graph_mapping)
   }
 }

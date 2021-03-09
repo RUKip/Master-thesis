@@ -7,11 +7,12 @@ import org.chocosolver.solver.variables.IntVar;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Solver {
 
-     public static String solve(List<GraphNode> nodes, HashMap<Integer, GraphNode> mapping)
-    {
+     public static String solve(List<GraphNode> nodes, Map<Integer, GraphNode> mapping)
+     {
         HashMap<String, Integer> color_options = new HashMap<>();
         color_options.put("red", 1);
         color_options.put("blue", 2);
@@ -21,12 +22,14 @@ public class Solver {
 
         for (GraphNode node : nodes) {
             //Create variable to calculate (the color of the node)
-            IntVar node_color =  model.intVar("Color_"+node.id(), color_options.values().stream().mapToInt(Integer::intValue).toArray());
+            if (node.color().equals("Blank")) {
+                IntVar node_color = model.intVar("Color_" + node.id(), color_options.values().stream().mapToInt(Integer::intValue).toArray());
 
-            //Create constraints
-            for (Integer id : node.connectedAsJava()) {
-                GraphNode connected_node = mapping.get(id);
-                model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();
+                //Create constraints
+                for (Integer id : node.connectedAsJava()) {
+                    GraphNode connected_node = mapping.get(id);
+                    model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();
+                }
             }
         }
 
@@ -37,5 +40,5 @@ public class Solver {
         }
 
         return solution.toString();
-    }
+     }
 }
