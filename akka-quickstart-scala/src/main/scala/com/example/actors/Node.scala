@@ -17,23 +17,27 @@ object Node {
   final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
   final case class BackTrack() extends Event
 
+  var tree_node: TreeNode = _
+
   def apply(node: TreeNode): Behavior[Event] = Behaviors.receive { (context, message) =>
+    tree_node = node
     message match {
       case PrintGraph() =>
         context.log.info(
           "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path: {}",
-          node.id,
-          node.graph_variables,
-          if (node.parent == null)  0  else node.parent.id,
-          node.tree_childeren,
+          tree_node.id,
+          tree_node.graph_variables,
+          if (tree_node.parent == null)  0  else tree_node.parent.id,
+          tree_node.tree_childeren,
           context.self.path,
         )
         Behaviors.same
 
       //Solve COP for this subtree here (using something like choco solver)
       case Initialize(parent_color_mapping: Map[Int, String]) =>
-        val new_node : TreeNode = node.updateNodes(parent_color_mapping)
-        val solution = this.initializeNodes(node)
+        val new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
+        tree_node = new_node
+        val solution = this.initializeNodes(tree_node)
         context.log.info("Solution: {}", solution)
         Behaviors.same
 

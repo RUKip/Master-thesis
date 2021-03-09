@@ -41,10 +41,17 @@ object COPSolver extends App {
 
     object RootBehavior {
         def apply(tree_nodes: Seq[TreeNode]): Behavior[Node.Event] = Behaviors.setup[Node.Event] { context =>
+            var first_time = true
             //TODO: here should start the algorithm of init + smart backtracking
             tree_nodes.foreach(tree_node => {
                     val actor = context.spawn(Node(tree_node), tree_node.id.toString)
                     actor ! Node.PrintGraph()
+
+                    //For debug purposes
+                    if (first_time) {
+                        first_time = false
+                        actor ! Node.Initialize(Map())
+                    }
                 }
             )
 
