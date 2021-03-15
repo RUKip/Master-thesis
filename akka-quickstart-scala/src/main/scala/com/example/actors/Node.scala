@@ -1,9 +1,11 @@
 package com.example.actors
 
+import akka.actor.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import com.example.TreeNode
 import com.example.solver.Solver
+
 import scala.jdk.CollectionConverters._
 
 //This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)

@@ -7,6 +7,9 @@ scalaVersion := "2.13.1"
 lazy val akkaVersion = "2.6.12"
 
 libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-remote" % akkaVersion,
+  "io.aeron" % "aeron-driver" % "1.32.0",
+  "io.aeron" % "aeron-client" % "1.32.0",
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
