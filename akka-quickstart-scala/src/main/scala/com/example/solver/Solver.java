@@ -12,13 +12,15 @@ import java.util.Map;
 
 public class Solver {
 
-     public static String solve(List<GraphNode> nodes, Map<Integer, GraphNode> mapping)
+    //Set of values
+    public static final String[] COLOR_MAPPING = {"red", "blue", "yellow", "Blank"};
+
+     public static List<Map<Integer, String>> solve(List<GraphNode> nodes, Map<Integer, GraphNode> mapping)
      {
         HashMap<String, Integer> color_options = new HashMap<>();
-        color_options.put("red", 1);
-        color_options.put("blue", 2);
-        color_options.put("yellow", 3);
-        color_options.put("Blank", 4);
+        for (int i = 0; i < COLOR_MAPPING.length - 1; i++) {
+            color_options.put(COLOR_MAPPING[i], i);
+        }
 
         Model model = new Model("Graph coloring problem");
 
@@ -26,7 +28,7 @@ public class Solver {
         List<IntVar> variables = new ArrayList<IntVar>();
         for (GraphNode node : nodes) {
             if (node.color().equals("Blank")) {
-                IntVar node_color = model.intVar("Color_" + node.id(), color_options.values().stream().mapToInt(Integer::intValue).toArray());
+                IntVar node_color = model.intVar("" + node.id(), color_options.values().stream().mapToInt(Integer::intValue).toArray());
                 variables.add(node_color);
 
                 //Create constraints for already set colors
@@ -35,7 +37,9 @@ public class Solver {
                     System.out.println("ID: " + id);
                     System.out.println("Connected node: " + connected_node);
 
-                    model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();
+                    if ( ! connected_node.color().equals("Blank")) {
+                        model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();
+                    }
                 }
             }
         }
@@ -43,11 +47,29 @@ public class Solver {
          model.allDifferent(variables.toArray(new IntVar[0])).post();
 
         //Solve
-        Solution solution = model.getSolver().findSolution();
-        if(solution != null){
-            System.out.println(solution.toString());
-        }
+        List<Solution> solutions = model.getSolver().findAllSolutions();
 
-        return solution.toString();
+         ArrayList<Map<Integer, String>> color_mapped_solutions = new ArrayList<>();
+         for (Solution solution : solutions) {
+             color_mapped_solutions.add(solutionToColorMapping(solution));
+         }
+
+//         //Below is debug, to see what is the solution
+//        if( ! solutions.isEmpty()){
+//            System.out.println(solutions.toString());
+//        }
+
+        return color_mapped_solutions;
      }
+
+
+    private static Map<Integer, String> solutionToColorMapping(Solution solution) {
+        HashMap<Integer, String> color_mapping = new HashMap<>();
+        List<IntVar> variables = solution.retrieveIntVars(false);
+        for (IntVar variable : variables) {
+             String color = COLOR_MAPPING[solution.getIntVal(variable)];
+             color_mapping.put(Integer.valueOf(variable.getName()), color);
+         }
+         return color_mapping;
+    }
 }
