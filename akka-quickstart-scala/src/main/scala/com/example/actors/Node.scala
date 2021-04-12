@@ -1,6 +1,6 @@
 package com.example.actors
 
-import akka.actor.typed.Behavior
+import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.Behaviors
 import com.example.{GraphNode, TreeNode}
@@ -18,16 +18,22 @@ object Node {
   final case class PrintGraph() extends Event
   final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
   final case class BackTrack() extends Event
-
-  var NodeServiceKey: ServiceKey[Event] = _
-  var tree_node: TreeNode = _
+  case class ListingResponse(listing: Receptionist.Listing) extends Event
 
   def apply(node: TreeNode): Behavior[Event] = Behaviors.setup { context =>
-    NodeServiceKey = ServiceKey[Event](node.id.toString)
+    val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](node.id.toString)
     context.system.receptionist ! Receptionist.Register(NodeServiceKey, context.self)
 
+    //Defines what message is responded after the actor is requested from the receptionist
+    val listingAdapter: ActorRef[Receptionist.Listing] =
+      context.messageAdapter { listing => ListingResponse(listing)}
+
+    receive(node)
+  }
+
+  def receive(tree_node: TreeNode): Behavior[Event] = {
     Behaviors.receive { (context, message) =>
-      tree_node = node
+      val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](tree_node.id.toString)
       message match {
         //This is a testing behaviour
         case PrintGraph() =>
@@ -39,23 +45,31 @@ object Node {
             tree_node.tree_childeren,
             context.self.path,
           )
-          Behaviors.same
 
         //Solve COP for this subtree here (using something like choco solver)
         case Initialize(parent_color_mapping: Map[Int, String]) =>
           val new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
-          tree_node = new_node
-          val solutions = this.initializeNodes(tree_node)
+
+          val solutions = this.initializeNodes(new_node)
           context.log.info("Solution: {}", solutions)
-//          solutions.map(solution => {
-//          })
-          Behaviors.same
+          //          solutions.map(solution => {
+          //          })
+          receive(new_node)
+
+        //Response of receptionist
+        case ListingResponse(NodeServiceKey.Listing(listings)) =>
+          context.log.info("For the send back actor references send them a new message")
+          val xs: Set[ActorRef[Event]] = listings
+          xs foreach { replyTo =>
+            //#greeter-send-messages
+            //replyTo !
+          }
 
         //Wait for messages from children (depends on what implementation of solver, but for example see hybrid-backtracking paper could be message good/no-good)
         case BackTrack() =>
-          Behaviors.same
 
       }
+      Behaviors.same
     }
   }
 
