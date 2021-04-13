@@ -1,6 +1,6 @@
 package com.example.solver;
 
-import com.example.GraphNode;
+import com.example.Variable;
 import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solution;
 import org.chocosolver.solver.variables.IntVar;
@@ -15,7 +15,7 @@ public class Solver {
     //Set of values
     public static final String[] COLOR_MAPPING = {"red", "blue", "yellow", "Blank"};
 
-     public static List<Map<Integer, String>> solve(List<GraphNode> nodes, Map<Integer, GraphNode> mapping)
+     public static List<Map<Integer, String>> solve(List<Variable> nodes, Map<Integer, Variable> mapping)
      {
         HashMap<String, Integer> color_options = new HashMap<>();
         for (int i = 0; i < COLOR_MAPPING.length - 1; i++) {
@@ -26,14 +26,14 @@ public class Solver {
 
          //Create variable to calculate (the color of the node)
         List<IntVar> variables = new ArrayList<IntVar>();
-        for (GraphNode node : nodes) {
+        for (Variable node : nodes) {
             if (node.color().equals("Blank")) {
                 IntVar node_color = model.intVar("" + node.id(), color_options.values().stream().mapToInt(Integer::intValue).toArray());
                 variables.add(node_color);
 
                 //Create constraints for already set colors
                 for (Integer id : node.connectedAsJava()) {
-                    GraphNode connected_node = mapping.get(id);
+                    Variable connected_node = mapping.get(id);
                     System.out.println("ID: " + id);
                     System.out.println("Connected node: " + connected_node);
 

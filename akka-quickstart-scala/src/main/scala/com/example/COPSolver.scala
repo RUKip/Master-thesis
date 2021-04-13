@@ -8,7 +8,7 @@ import com.typesafe.config.ConfigFactory
 object COPSolver extends App {
 
     //Init graph and tree
-    val graph: Map[Int, GraphNode] = InitializationHelper.initAGraph()
+    val graph: Map[Int, Variable] = InitializationHelper.initAGraph()
 
     //Calculate graph tree-decomposition
     val (root_node, tree_decomposition): (TreeNode, Map[Int, TreeNode]) = InitializationHelper.getHTD(graph)

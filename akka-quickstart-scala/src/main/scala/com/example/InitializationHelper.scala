@@ -11,15 +11,15 @@ object InitializationHelper {
       |   |
       5 - 6
    */
-  def initAGraph(): Map[Int, GraphNode] = {
-    var mapping: Map[Int, GraphNode] = Map()
+  def initAGraph(): Map[Int, Variable] = {
+    var mapping: Map[Int, Variable] = Map()
 
-    val node1 = GraphNode(1, List(2), "Blank")
-    val node2 = GraphNode(2, List(1,3,4), "Blank")
-    val node3 = GraphNode(3, List(2,4,5), "Blank")
-    val node4 = GraphNode(4, List(2,3,6), "Blank")
-    val node5 = GraphNode(5, List(3,6), "Blank")
-    val node6 = GraphNode(6, List(4,5), "Blank")
+    val node1 = Variable(1, List(2), "Blank")
+    val node2 = Variable(2, List(1,3,4), "Blank")
+    val node3 = Variable(3, List(2,4,5), "Blank")
+    val node4 = Variable(4, List(2,3,6), "Blank")
+    val node5 = Variable(5, List(3,6), "Blank")
+    val node6 = Variable(6, List(4,5), "Blank")
 
     mapping += (1 -> node1)
     mapping += (2 -> node2)
@@ -45,7 +45,7 @@ object InitializationHelper {
       |
    (4,5,6)
  */
-  def getHTD(graph_mapping: Map[Int, GraphNode]): (TreeNode, Map[Int, TreeNode]) = {
+  def getHTD(graph_mapping: Map[Int, Variable]): (TreeNode, Map[Int, TreeNode]) = {
     var mapping: Map[Int, TreeNode] = Map()
 
     val root = TreeNode(1, null, List(2, 3), List(2,3,4), graph_mapping, List(), List(3,4))

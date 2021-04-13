@@ -3,7 +3,7 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.Behaviors
-import com.example.{GraphNode, TreeNode}
+import com.example.{Variable, TreeNode}
 import com.example.solver.Solver
 
 import scala.jdk.CollectionConverters._
@@ -38,7 +38,7 @@ object Node {
         //This is a testing behaviour
         case PrintGraph() =>
           context.log.info(
-            "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path: {}",
+            "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path:  {}",
             tree_node.id,
             tree_node.graph_variables,
             if (tree_node.parent == null)  0  else tree_node.parent.id,
@@ -74,7 +74,7 @@ object Node {
   }
 
   def initializeNodes(node: TreeNode): List[Map[Int, String]] = {
-    val java_mapping: Map[Integer, GraphNode] = node.full_graph_mapping map {case (key, value) => (key:java.lang.Integer, value)}
+    val java_mapping: Map[Integer, Variable] = node.full_graph_mapping map {case (key, value) => (key:java.lang.Integer, value)}
     val solutions: List[Map[Int, String]]  = Solver.solve(node.getGraphNodes.asJava, java_mapping.asJava)
       .asScala
       .toList
