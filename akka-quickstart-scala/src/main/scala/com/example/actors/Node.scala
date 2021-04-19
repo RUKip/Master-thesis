@@ -3,7 +3,7 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.Behaviors
-import com.example.{Variable, TreeNode}
+import com.example.{TreeNode, Variable}
 import com.example.solver.Solver
 
 import scala.jdk.CollectionConverters._
@@ -18,7 +18,7 @@ object Node {
   final case class PrintGraph() extends Event
   final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
   final case class BackTrack() extends Event
-  case class ListingResponse(listing: Receptionist.Listing) extends Event
+  final case class ListingResponse(listing: Receptionist.Listing) extends Event
 
   def apply(node: TreeNode): Behavior[Event] = Behaviors.setup { context =>
     val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](node.id.toString)
