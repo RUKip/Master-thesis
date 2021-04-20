@@ -1,6 +1,6 @@
 package com.example
 
-case class Mapping(solution: Solution, intersection : Map[Int, Map[Int, List[Variable]]]) {
+case class Mapping(intersection : Map[Int, Map[Int, List[Variable]]]) {
 
   //Returns subset of full solution mapping (so to only send the values that are intersecting)
   def getSpecificMapping(solution: Solution, child_tree_node_id: Int): Map[Int, String] = {
