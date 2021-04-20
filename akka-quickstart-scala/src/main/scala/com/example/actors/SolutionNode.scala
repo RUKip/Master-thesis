@@ -10,7 +10,7 @@ class SolutionNode {
 }
 
 object SolutionNode {
-  sealed trait SolutionEvent //Scalas enum
+  sealed trait SolutionEvent extends Node.Event//Scalas enum
   final case class ReceiveOptimalSolution(solution: Solution) extends SolutionEvent
   final case class SendSolution(color_mapping: Map[Int, String]) extends SolutionEvent
   final case class ListingResponse(listing: Receptionist.Listing, from: Int) extends SolutionEvent
@@ -20,7 +20,7 @@ object SolutionNode {
   def apply(
              solution: Solution,
              mapping: Mapping,
-             parent_ref: ActorRef[SolutionEvent]
+             parent_ref: ActorRef[Node.Event]
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
     requestChildRef(solution, context)
     receive(parent_ref, solution, mapping, solution)
@@ -44,8 +44,9 @@ object SolutionNode {
     actorRef ! SendSolution(mapping.getSpecificMapping(solution, node_id))
   }
 
-  def receive(parent_ref: ActorRef[SolutionEvent], solution: Solution, mapping: Mapping, final_solution: Solution): Behavior[SolutionEvent] = {
+  def receive(parent_ref: ActorRef[Node.Event], solution: Solution, mapping: Mapping, final_solution: Solution): Behavior[SolutionEvent] = {
     val NodeServiceKey: ServiceKey[SolutionEvent] = ServiceKey[SolutionEvent](solution.id)
+    var new_final_solution = final_solution
     Behaviors.receive { (context, message) =>
       message match {
         case ListingResponse(NodeServiceKey.Listing(listings), from) =>
@@ -59,9 +60,9 @@ object SolutionNode {
             //TODO: should break here
             Behaviors.empty
           }
-          final_solution.addSolution(optimal_solution)
+          new_final_solution = final_solution.addSolution(optimal_solution)
       }
-      receive(parent_ref, solution, mapping, final_solution)
+      receive(parent_ref, solution, mapping, new_final_solution)
     }
   }
 }

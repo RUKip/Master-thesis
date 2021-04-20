@@ -18,6 +18,8 @@ object COPSolver extends App {
     //Startup cluster?
     //This matches with the config file
     val ports = Seq(25251, 25252)
+
+    //TODO: Here the nodes are divided (here should be to test different cluster deployments)
     val divided_nodes = tree_decomposition.values.toSeq.grouped(
         math.ceil(tree_decomposition.values.size.doubleValue() / ports.length.doubleValue()).toInt
     )

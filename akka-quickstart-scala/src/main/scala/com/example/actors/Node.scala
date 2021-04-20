@@ -3,7 +3,7 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.Behaviors
-import com.example.{TreeNode, Variable}
+import com.example.{Solution, TreeNode, Variable}
 import com.example.solver.Solver
 
 import scala.jdk.CollectionConverters._
@@ -14,7 +14,8 @@ class Node() {
 }
 
 object Node {
-  sealed trait Event //Scalas enum
+  //TODO: This trait is not sealed is that a problem?
+  trait Event //Scalas enum
   final case class PrintGraph() extends Event
   final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
   final case class BackTrack() extends Event
@@ -52,8 +53,16 @@ object Node {
 
           val solutions = this.initializeNodes(new_node)
           context.log.info("Solution: {}", solutions)
-          //          solutions.map(solution => {
-          //          })
+
+          solutions.zipWithIndex.foreach( case (color_mapping: Map[Int, String], index: Int) => {
+            val solution_id = tree_node.id.toString + "_" + index
+            val solution_node: SolutionNode = SolutionNode(Solution(solution_id, tree_node, color_mapping), tree_node.child_connected , context.self)
+            val actor = context.spawn(
+              solution_node,
+              solution_id
+            )
+            actor !
+            })
           receive(new_node)
 
         //Response of receptionist

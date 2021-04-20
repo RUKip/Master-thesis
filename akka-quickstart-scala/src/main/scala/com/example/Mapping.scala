@@ -1,13 +1,16 @@
 package com.example
 
-case class Mapping(intersection : Map[Int, Map[Int, List[Variable]]]) {
+case class Mapping(tree_node: Int, intersection : Map[Int, List[Int]]) {
 
   //Returns subset of full solution mapping (so to only send the values that are intersecting)
   def getSpecificMapping(solution: Solution, child_tree_node_id: Int): Map[Int, String] = {
-    val intersecting_variables: List[Variable] = intersection(solution.parent.id)(child_tree_node_id)
+    if (solution.parent.id != tree_node) {
+      throw new Exception("Solution belnogs to different tree node")
+    }
+    val intersecting_variables: List[Int] = intersection(child_tree_node_id)
     var map: Map[Int, String] = Map()
-    intersecting_variables.foreach(variable =>
-      map += (variable.id -> solution.color_mapping(variable.id))
+    intersecting_variables.foreach(variable_id =>
+      map += (variable_id -> solution.color_mapping(variable_id))
     )
     map
   }
