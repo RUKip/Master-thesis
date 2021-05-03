@@ -8,12 +8,12 @@ import com.example.solver.Solver
 
 import scala.jdk.CollectionConverters._
 
-//This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)
-class Node() {
+class NodeSearch {
 
 }
 
-object Node {
+
+object NodeSearch {
   sealed trait Event //Scalas enum
   final case class PrintGraph() extends Event
   final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
@@ -21,7 +21,7 @@ object Node {
   final case class ListingResponse(listing: Receptionist.Listing) extends Event
   final case class SendOptimalSolution(solution: Solution) extends Event
 
-  def apply(node: TreeNode): Behavior[Event] = Behaviors.setup { context =>
+  def apply(node: TreeNode, solutionNode: SolutionNode, subproblem: Map[Int, Variable]): Behavior[Event] = Behaviors.setup { context =>
     val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](node.id.toString)
     context.system.receptionist ! Receptionist.Register(NodeServiceKey, context.self)
 
@@ -62,8 +62,9 @@ object Node {
               solution_id
             )
             actor !
-            }
           }
+          }
+
           receive(new_node)
 
         //Response of receptionist
