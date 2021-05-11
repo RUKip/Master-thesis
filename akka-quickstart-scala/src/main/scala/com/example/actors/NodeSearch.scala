@@ -3,6 +3,7 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.Behaviors
+import com.example.actors.SolutionNode.SolutionEvent
 import com.example.{Solution, TreeNode, Variable}
 import com.example.solver.Solver
 
@@ -21,9 +22,30 @@ object NodeSearch {
   final case class ListingResponse(listing: Receptionist.Listing) extends Event
   final case class SendOptimalSolution(solution: Solution) extends Event
 
-  def apply(node: TreeNode, solutionNode: SolutionNode, subproblem: Map[Int, Variable]): Behavior[Event] = Behaviors.setup { context =>
+  def apply(node: TreeNode, solutionNode: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
     val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](node.id.toString)
     context.system.receptionist ! Receptionist.Register(NodeServiceKey, context.self)
+
+    val solutions = this.initializeNodes(node)
+    context.log.info("Solution: {}", solutions)
+
+    if(solutions.isEmpty) {
+      solutionNode ! SolutionNode.SendSolution(Map())
+      //TODO: stop here
+      Behaviors.stopped
+    }
+
+    solutions.zipWithIndex.foreach { case (color_mapping: Map[Int, String], index: Int) => {
+      val solution_id = node.id.toString + "_" + index
+      val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, color_mapping), node.child_connected, context.self)
+      val actor = context.spawn(
+        solution_node,
+        solution_id
+      )
+      actor !
+    }
+    }
+
 
     //Defines what message is responded after the actor is requested from the receptionist
     val listingAdapter: ActorRef[Receptionist.Listing] =
@@ -46,27 +68,6 @@ object NodeSearch {
             tree_node.tree_childeren,
             context.self.path,
           )
-
-        //Solve COP for this subtree here (using something like choco solver)
-        case Initialize(parent_color_mapping: Map[Int, String]) =>
-          val new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
-
-          val solutions = this.initializeNodes(new_node)
-          context.log.info("Solution: {}", solutions)
-
-          solutions.zipWithIndex.foreach { case (color_mapping: Map[Int, String], index: Int) => {
-            val solution_id = tree_node.id.toString + "_" + index
-            val solution_node: SolutionNode = SolutionNode(Solution(solution_id, tree_node, color_mapping), tree_node.child_connected, context.self)
-            val actor = context.spawn(
-              solution_node,
-              solution_id
-            )
-            actor !
-          }
-          }
-
-          receive(new_node)
-
         //Response of receptionist
         case ListingResponse(NodeServiceKey.Listing(listings)) =>
           context.log.info("For the send back actor references send them a new message")
@@ -91,5 +92,12 @@ object NodeSearch {
       .toList
       .map(internal_map => internal_map.asScala.toMap map {case (key, value) => (key.toInt, value) })
     solutions
+  }
+
+  def findOptimalSolution(solutions: List[Solution]): (Solution, Int) = {
+    var optimal_solution: Solution = null
+    var optimal_cost: Int = 0
+    solutions.foreach()
+    (optimal_solution, optimal_cost)
   }
 }

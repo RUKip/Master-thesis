@@ -3,11 +3,11 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import com.example.actors.Node.SendOptimalSolution
+import com.example.actors.NodeSearch.SendOptimalSolution
 import com.example.actors.SolutionNode.{ListingResponse, ReceiveOptimalSolution, SendSolution, SolutionEvent}
 import com.example.{Mapping, Solution}
 
-class SolutionNode(val solution: Solution, val mapping: Mapping, val parent_ref: ActorRef[Node.Event]) {
+class SolutionNode(val solution: Solution, val mapping: Mapping, val parent_ref: ActorRef[Node.Event], val reference: ActorRef[SolutionEvent]) {
 
   def requestChildRef(context: ActorContext[SolutionEvent]): Unit = {
     //Defines what message is responded after the actor is requested from the receptionist
@@ -61,7 +61,7 @@ object SolutionNode {
              mapping: Mapping,
              parent_ref: ActorRef[Node.Event]
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
-    val node = new SolutionNode(solution, mapping, parent_ref)
+    val node = new SolutionNode(solution, mapping, parent_ref, context.self)
     node.requestChildRef(context)
     node.receive(solution)
   }
