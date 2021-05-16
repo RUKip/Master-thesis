@@ -2,18 +2,17 @@ package com.example.actors
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import com.example.actors.NodeSearch.{Event, SendOptimalSolution}
 import com.example.actors.SolutionNode.SolutionEvent
 import com.example.{Solution, TreeNode, Variable}
 import com.example.solver.Solver
 
 import scala.jdk.CollectionConverters._
 
-class NodeSearch {
-  var optimal_solution: Solution = null
-  var optimal_cost: Int = 0
+class NodeSearch (node: TreeNode) {
 
-  //For now lets just say we want the least amount of color 'red'
+  //For now lets just say we want the most amount of color 'red'
   def calcCost(color_mapping: Map[Int, String]): Int = {
     var cost: Int = 0
     color_mapping.foreach {
@@ -24,6 +23,29 @@ class NodeSearch {
     }
     cost
   }
+
+  def receiveSolution(context: ActorContext[NodeSearch.Event], best_solution: Map[Int, String], best_score: Int, solutions: List[Map[Int, String]], index: Int): Behavior[Event] = {
+    val current_solution = solutions(index)
+    val solution_id = node.id.toString + "_" + index
+    val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, current_solution), node.child_connected, parent_node)
+    val solution_actor = context.spawn(
+      solution_node,
+      solution_id
+    )
+    Behaviors.receive { (context, message) =>
+      message match {
+        case SendOptimalSolution(solution) =>
+
+          val cost = this.calcCost(solution)
+          if (cost > best_score) {
+            receiveSolution(context, solution, cost, solutions, index + 1)
+          } else {
+            receiveSolution(context, best_solution, best_score, solutions, index + 1)
+          }
+      }
+    }
+  }
+
 }
 
 
@@ -39,7 +61,7 @@ object NodeSearch {
     val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](node.id.toString)
     context.system.receptionist ! Receptionist.Register(NodeServiceKey, context.self)
 
-    val node_search = new NodeSearch()
+    val node_search = new NodeSearch(node)
 
     val solutions = this.initializeNodes(node)
     context.log.info("Solution: {}", solutions)
@@ -50,18 +72,20 @@ object NodeSearch {
       Behaviors.stopped
     }
 
+    receiveSolution(context, node_search, null, 0)
 
-    solutions.zipWithIndex.foreach { case (color_mapping: Map[Int, String], index: Int) => {
-      val solution_id = node.id.toString + "_" + index
-      val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, color_mapping), node.child_connected, parent_node)
-      val solution_actor = context.spawn(
-        solution_node,
-        solution_id
-      )
-      //TODO; how to wait activly for a solution?
-      this.receiveSolution()
-      }
-    }
+
+//    solutions.zipWithIndex.foreach { case (color_mapping: Map[Int, String], index: Int) => {
+//      val solution_id = node.id.toString + "_" + index
+//      val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, color_mapping), node.child_connected, parent_node)
+//      val solution_actor = context.spawn(
+//        solution_node,
+//        solution_id
+//      )
+//        //TODO; how to wait activly for a solution? As we also not to create the agent and need to send
+//        receiveSolution(context, node_search, null, 0)
+//      }
+//    }
 
 
     //Defines what message is responded after the actor is requested from the receptionist
@@ -71,15 +95,6 @@ object NodeSearch {
     receive(node)
   }
 
-  def receiveSolution(nodeSearch: NodeSearch): Behavior[Event] = {
-    Behaviors.receive { (context, message) =>
-      message match {
-        case SendOptimalSolution(solution) =>
-
-          nodeSearch.calcCost(solution)
-      }
-    }
-  }
 
   def receive(tree_node: TreeNode): Behavior[Event] = {
     Behaviors.receive { (context, message) =>
