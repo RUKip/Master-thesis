@@ -25,7 +25,7 @@ class Node() {
             context.self.path,
           )
 
-        case Initialize(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) =>
+        case ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) =>
           var new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
 
           if (solution_node != null) {
@@ -70,9 +70,10 @@ class Node() {
 object Node {
   sealed trait Event //Scalas enum
   final case class PrintGraph() extends Event
-  final case class Initialize(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) extends Event
+  final case class ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) extends Event
   final case class ListingResponse(listing: Receptionist.Listing) extends Event
   final case class SendSolution(solution: Map[Int, String]) extends Event
+  final case class Terminate() extends Event
 
   def apply(tree_node: TreeNode): Behavior[Event] = Behaviors.setup { context =>
     val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](tree_node.id.toString)

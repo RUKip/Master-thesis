@@ -20,9 +20,9 @@ object NodeSearch {
   final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
   final case class BackTrack() extends Event
   final case class ListingResponse(listing: Receptionist.Listing) extends Event
-  final case class SendOptimalSolution(solution: Solution) extends Event
+  final case class SendOptimalSolution(solution: Map[Int, String]) extends Event
 
-  def apply(node: TreeNode, solutionNode: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
+  def apply(node: TreeNode, parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
     val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](node.id.toString)
     context.system.receptionist ! Receptionist.Register(NodeServiceKey, context.self)
 
@@ -30,19 +30,22 @@ object NodeSearch {
     context.log.info("Solution: {}", solutions)
 
     if(solutions.isEmpty) {
-      solutionNode ! SolutionNode.SendSolution(Map())
+      parent_solution_node ! SolutionNode.SendSolution(Map())
       //TODO: stop here
       Behaviors.stopped
     }
 
+    var optimal_solution: Solution = null
+    var optimal_cost: Int = 0
+
     solutions.zipWithIndex.foreach { case (color_mapping: Map[Int, String], index: Int) => {
       val solution_id = node.id.toString + "_" + index
-      val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, color_mapping), node.child_connected, context.self)
-      val actor = context.spawn(
-        solution_node,
-        solution_id
-      )
-      actor !
+      val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, color_mapping), node.child_connected, parent_node)
+//      val actor = context.spawn(
+//        solution_node,
+//        solution_id
+//      )
+//      actor !
     }
     }
 

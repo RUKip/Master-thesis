@@ -3,11 +3,11 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import com.example.actors.NodeSearch.SendOptimalSolution
-import com.example.actors.SolutionNode.{ListingResponse, ReceiveOptimalSolution, SendSolution, SolutionEvent}
+import com.example.actors.Node.SendSolution
+import com.example.actors.SolutionNode.{ListingResponse, ReceiveOptimalSolution, SolutionEvent}
 import com.example.{Mapping, Solution}
 
-class SolutionNode(val solution: Solution, val mapping: Mapping, val parent_ref: ActorRef[Node.Event], val reference: ActorRef[SolutionEvent]) {
+class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_childeren_ids: List[Int], val parent_node: ActorRef[Node.Event], val parent_solution_node: ActorRef[SolutionEvent]) {
 
   def requestChildRef(context: ActorContext[SolutionEvent]): Unit = {
     //Defines what message is responded after the actor is requested from the receptionist
@@ -39,7 +39,7 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val parent_ref:
           }
         case ReceiveOptimalSolution(optimal_solution) =>
           if (optimal_solution == null) {
-            parent_ref ! SendOptimalSolution(null)
+            parent_node ! SendSolution(null)
             //TODO: should break here
             Behaviors.stopped
           }
@@ -59,9 +59,10 @@ object SolutionNode {
   def apply(
              solution: Solution,
              mapping: Mapping,
+             tree_node_childeren_ids: List[Int],
              parent_ref: ActorRef[Node.Event]
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
-    val node = new SolutionNode(solution, mapping, parent_ref, context.self)
+    val node = new SolutionNode(solution, mapping, tree_node_childeren_ids, parent_ref, context.self)
     node.requestChildRef(context)
     node.receive(solution)
   }
