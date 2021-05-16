@@ -10,7 +10,20 @@ import com.example.solver.Solver
 import scala.jdk.CollectionConverters._
 
 class NodeSearch {
+  var optimal_solution: Solution = null
+  var optimal_cost: Int = 0
 
+  //For now lets just say we want the least amount of color 'red'
+  def calcCost(color_mapping: Map[Int, String]): Int = {
+    var cost: Int = 0
+    color_mapping.foreach {
+      case (_, color) =>
+        if (color == "red") {
+          cost += 1
+        }
+    }
+    cost
+  }
 }
 
 
@@ -26,6 +39,8 @@ object NodeSearch {
     val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](node.id.toString)
     context.system.receptionist ! Receptionist.Register(NodeServiceKey, context.self)
 
+    val node_search = new NodeSearch()
+
     val solutions = this.initializeNodes(node)
     context.log.info("Solution: {}", solutions)
 
@@ -35,18 +50,17 @@ object NodeSearch {
       Behaviors.stopped
     }
 
-    var optimal_solution: Solution = null
-    var optimal_cost: Int = 0
 
     solutions.zipWithIndex.foreach { case (color_mapping: Map[Int, String], index: Int) => {
       val solution_id = node.id.toString + "_" + index
       val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, color_mapping), node.child_connected, parent_node)
-//      val actor = context.spawn(
-//        solution_node,
-//        solution_id
-//      )
-//      actor !
-    }
+      val solution_actor = context.spawn(
+        solution_node,
+        solution_id
+      )
+      //TODO; how to wait activly for a solution?
+      this.receiveSolution()
+      }
     }
 
 
@@ -55,6 +69,16 @@ object NodeSearch {
       context.messageAdapter { listing => ListingResponse(listing)}
 
     receive(node)
+  }
+
+  def receiveSolution(nodeSearch: NodeSearch): Behavior[Event] = {
+    Behaviors.receive { (context, message) =>
+      message match {
+        case SendOptimalSolution(solution) =>
+
+          nodeSearch.calcCost(solution)
+      }
+    }
   }
 
   def receive(tree_node: TreeNode): Behavior[Event] = {
@@ -95,12 +119,5 @@ object NodeSearch {
       .toList
       .map(internal_map => internal_map.asScala.toMap map {case (key, value) => (key.toInt, value) })
     solutions
-  }
-
-  def findOptimalSolution(solutions: List[Solution]): (Solution, Int) = {
-    var optimal_solution: Solution = null
-    var optimal_cost: Int = 0
-    solutions.foreach()
-    (optimal_solution, optimal_cost)
   }
 }
