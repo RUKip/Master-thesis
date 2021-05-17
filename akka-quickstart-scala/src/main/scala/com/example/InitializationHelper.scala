@@ -48,7 +48,7 @@ object InitializationHelper {
   def getHTD(graph_mapping: Map[Int, Variable]): (TreeNode, Map[Int, TreeNode]) = {
     var mapping: Map[Int, TreeNode] = Map()
 
-    val root = TreeNode(1, null, List(2, 3), List(2,3,4), graph_mapping, List(), Mapping(1, Map(2 -> List(3,4), 3 -> List(2))))
+    val root = TreeNode(1, 0, List(2, 3), List(2,3,4), graph_mapping, List(), Mapping(1, Map(2 -> List(3,4), 3 -> List(2))))
     val node2 = TreeNode(2, 1, List(4), List(3,4,5), graph_mapping, List(3,4), Mapping(2, Map(4 -> List(4,5))))
     val node3 = TreeNode(3, 1, List(), List(1,2), graph_mapping, List(2), Mapping(3,Map()))
     val node4 = TreeNode(4, 2, List(), List(4,5,6), graph_mapping, List(4,5), Mapping(4,Map()))

@@ -14,8 +14,8 @@ object TopLevel {
   def apply(tree_nodes: Seq[TreeNode]): Behavior[NodeSearch.Event] = Behaviors.setup[NodeSearch.Event] { context =>
     //Initialize all tree node actors
     val actors = tree_nodes map { tree_node => {
-      context.spawn(Node(tree_node), tree_node.id.toString)
-    }
+        context.spawn(Node(tree_node), tree_node.id.toString)
+      }
     }
 
     //This part only has to run for one TopLevel in the distributed actorsystem
@@ -27,7 +27,7 @@ object TopLevel {
       //Wait for final solution
       Behaviors.receive { (context, message) =>
         message match {
-          case SendOptimalSolution(solution: Map[Int, String]) => {
+          case SendOptimalSolution(solution: Map[Int, String]) =>
             println("Final solution is:")
             println(solution.toString())
 
@@ -35,7 +35,6 @@ object TopLevel {
             actors.head ! Terminate()
 
             Behaviors.stopped
-          }
         }
       }
     } else {
