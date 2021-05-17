@@ -11,7 +11,7 @@ class TopLevel {
 
 object TopLevel {
 
-  def apply(tree_nodes: Seq[TreeNode]): Behavior[Node.Event] = Behaviors.setup[Node.Event] { context =>
+  def apply(tree_nodes: Seq[TreeNode]): Behavior[NodeSearch.Event] = Behaviors.setup[NodeSearch.Event] { context =>
     //Initialize all tree node actors
     val actors = tree_nodes map { tree_node => {
       context.spawn(Node(tree_node), tree_node.id.toString)
