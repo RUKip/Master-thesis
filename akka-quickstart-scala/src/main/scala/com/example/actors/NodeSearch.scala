@@ -24,7 +24,8 @@ class NodeSearch (node: TreeNode) {
     cost
   }
 
-  def receiveSolution(context: ActorContext[NodeSearch.Event], best_solution: Map[Int, String], best_score: Int, solutions: List[Map[Int, String]], index: Int): Behavior[Event] = {
+  //TODO; does this wait activly for a solution? As we also not to create the agent and need to send
+  def receiveSolution(context: ActorContext[NodeSearch.Event], solutions: List[Map[Int, String]], best_solution: Map[Int, String], best_score: Int, index: Int): Behavior[Event] = {
     val current_solution = solutions(index)
     val solution_id = node.id.toString + "_" + index
     val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, current_solution), node.child_connected, parent_node)
@@ -38,9 +39,9 @@ class NodeSearch (node: TreeNode) {
 
           val cost = this.calcCost(solution)
           if (cost > best_score) {
-            receiveSolution(context, solution, cost, solutions, index + 1)
+            receiveSolution(context, solutions, solution, cost, index + 1)
           } else {
-            receiveSolution(context, best_solution, best_score, solutions, index + 1)
+            receiveSolution(context, solutions, best_solution, best_score, index + 1)
           }
       }
     }
@@ -72,22 +73,9 @@ object NodeSearch {
       Behaviors.stopped
     }
 
-    receiveSolution(context, node_search, null, 0)
+    node_search.receiveSolution(context, solutions, null, 0, 0)
 
-
-//    solutions.zipWithIndex.foreach { case (color_mapping: Map[Int, String], index: Int) => {
-//      val solution_id = node.id.toString + "_" + index
-//      val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, color_mapping), node.child_connected, parent_node)
-//      val solution_actor = context.spawn(
-//        solution_node,
-//        solution_id
-//      )
-//        //TODO; how to wait activly for a solution? As we also not to create the agent and need to send
-//        receiveSolution(context, node_search, null, 0)
-//      }
-//    }
-
-
+    //TODO: what happens here. Does above get executed first?
     //Defines what message is responded after the actor is requested from the receptionist
     val listingAdapter: ActorRef[Receptionist.Listing] =
       context.messageAdapter { listing => ListingResponse(listing)}
@@ -106,7 +94,7 @@ object NodeSearch {
             "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path:  {}",
             tree_node.id,
             tree_node.graph_variables,
-            if (tree_node.parent == null)  0  else tree_node.parent.id,
+            tree_node.parent,
             tree_node.tree_childeren,
             context.self.path,
           )

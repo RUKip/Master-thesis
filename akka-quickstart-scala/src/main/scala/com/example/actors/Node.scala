@@ -20,7 +20,7 @@ class Node() {
             "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path:  {}",
             tree_node.id,
             tree_node.graph_variables,
-            if (tree_node.parent == null)  0  else tree_node.parent.id,
+            tree_node.parent,
             tree_node.tree_childeren,
             context.self.path,
           )

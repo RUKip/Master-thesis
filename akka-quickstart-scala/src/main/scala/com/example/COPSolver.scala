@@ -1,8 +1,7 @@
 package com.example
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior}
-import com.example.actors.Node
+import akka.actor.typed.{ActorSystem}
+import com.example.actors.{Node, TopLevel}
 import com.typesafe.config.ConfigFactory
 
 object COPSolver extends App {
@@ -37,27 +36,27 @@ object COPSolver extends App {
       """).withFallback(ConfigFactory.load())
 
         // Create an Akka system
-        val system: ActorSystem[Node.Event] = ActorSystem(RootBehavior(tree_nodes), name= "COPSolver", config = config)
+        val system: ActorSystem[Node.Event] = ActorSystem(TopLevel(tree_nodes), name= "COPSolver", config = config)
     }
 
-    object RootBehavior {
-        def apply(tree_nodes: Seq[TreeNode]): Behavior[Node.Event] = Behaviors.setup[Node.Event] { context =>
-            var first_time = true
-
-          //TODO: here should start the algorithm of init + smart backtracking
-            tree_nodes.foreach(tree_node => {
-                    val actor = context.spawn(Node(tree_node), tree_node.id.toString)
-                    actor ! Node.PrintGraph()
-
-                    //For debug purposes
-                    if (first_time) {
-                        first_time = false
-                        actor ! Node.Initialize(Map())
-                    }
-                }
-            )
-
-            Behaviors.empty
-        }
-    }
+//    object RootBehavior {
+//        def apply(tree_nodes: Seq[TreeNode]): Behavior[Node.Event] = Behaviors.setup[Node.Event] { context =>
+//            var first_time = true
+//
+//          //TODO: here should start the algorithm of init + smart backtracking
+//            tree_nodes.foreach(tree_node => {
+//                    val actor = context.spawn(Node(tree_node), tree_node.id.toString)
+//                    actor ! Node.PrintGraph()
+//
+//                    //For debug purposes
+//                    if (first_time) {
+//                        first_time = false
+//                        actor ! Node.Initialize(Map())
+//                    }
+//                }
+//            )
+//
+//            Behaviors.empty
+//        }
+//    }
 }

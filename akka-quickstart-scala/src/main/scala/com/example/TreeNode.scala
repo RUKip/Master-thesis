@@ -3,7 +3,7 @@ package com.example
 //For the decomposition of the graph
 case class TreeNode(
                      id: Int,
-                     parent: TreeNode,
+                     parent: Int,
                      tree_childeren: List[Int],
                      graph_variables: List[Int],
                      full_graph_mapping: Map[Int, Variable],
