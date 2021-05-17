@@ -28,9 +28,9 @@ class NodeSearch (node: TreeNode) {
   def receiveSolution(context: ActorContext[NodeSearch.Event], solutions: List[Map[Int, String]], best_solution: Map[Int, String], best_score: Int, index: Int): Behavior[Event] = {
     val current_solution = solutions(index)
     val solution_id = node.id.toString + "_" + index
-    val solution_node: SolutionNode = SolutionNode(Solution(solution_id, node, current_solution), node.child_connected, parent_node)
+
     val solution_actor = context.spawn(
-      solution_node,
+      SolutionNode(Solution(solution_id, node, current_solution), node.child_connected, node.tree_childeren, context.self),
       solution_id
     )
     Behaviors.receive { (context, message) =>

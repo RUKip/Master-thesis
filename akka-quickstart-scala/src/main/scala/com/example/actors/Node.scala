@@ -32,7 +32,7 @@ class Node() {
             this.waitForSolution(tree_node, solution_node, solution_id)
           } else {
             context.spawn(
-              NodeSearch(new_node, solution_node),
+              NodeSearch(new_node, context.self, solution_node),
               solution_id.toString
             )
             receive(new_node, solution_id + 1)
@@ -57,7 +57,7 @@ class Node() {
         case SendSolution(solution: Map[Int, String]) => {
           val new_node = node.updateNodes(solution)
           context.spawn(
-            NodeSearch(new_node, parent_solution_node),
+            NodeSearch(new_node, context.self, parent_solution_node),
             solution_id.toString
           )
           receive(new_node, solution_id+1)
