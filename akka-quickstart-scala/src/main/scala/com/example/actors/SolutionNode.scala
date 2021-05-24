@@ -40,15 +40,16 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
             xs foreach { replyTo =>
               sendSolution(solution, replyTo, from)
             }
+            receive(new_final_solution, index)
           case ReceiveOptimalSolution(optimal_solution) =>
             if (optimal_solution == null) {
               parent_node ! NodeSearch.SendOptimalSolution(null)
-              //TODO: should break here
               Behaviors.stopped
+            } else {
+              new_final_solution = final_solution.addSolution(optimal_solution)
+              receive(new_final_solution, index)
             }
-            new_final_solution = final_solution.addSolution(optimal_solution)
         }
-        receive(new_final_solution, index)
       }
     }
   }
