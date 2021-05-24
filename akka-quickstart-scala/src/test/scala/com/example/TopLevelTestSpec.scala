@@ -31,7 +31,8 @@ class TopLevelTestSpec
     val probe = testKit.createTestProbe[ReceiveSolution]()
     val toplevel = testKit.spawn(TopLevel(tree_decomposition.values.toSeq))
     probe.expectMessageType[ReceiveSolution]
-//    testKit.expectEffect(Spawned(Node(tree_decomposition.get(1).orNull), "1"))
+
+    //    testKit.expectEffect(Spawned(Node(tree_decomposition.get(1).orNull), "1"))
 //    testKit.expectEffect(Spawned(Node(tree_decomposition.get(2).orNull), "2"))
 //    testKit.expectEffect(Spawned(Node(tree_decomposition.get(3).orNull), "3"))
 //    testKit.expectEffect(Spawned(Node(tree_decomposition.get(4).orNull), "4"))

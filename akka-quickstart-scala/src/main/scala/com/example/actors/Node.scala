@@ -8,7 +8,7 @@ import com.example.actors.SolutionNode.SolutionEvent
 import com.example.TreeNode
 
 //This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)
-class Node() {
+class Node(listingAdapter: ActorRef[Receptionist.Listing]) {
 
   def receive(tree_node: TreeNode, solution_id: Int): Behavior[Event] = {
     Behaviors.receive { (context, message) =>
@@ -24,7 +24,7 @@ class Node() {
             tree_node.tree_childeren,
             context.self.path,
           )
-
+          Behaviors.same
         case ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) =>
           context.log.info("Node received solution: " + parent_color_mapping.toString())
           var new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
@@ -32,7 +32,6 @@ class Node() {
           if (solution_node != null) {
             this.waitForSolution(tree_node, solution_node, solution_id)
           } else {
-
             context.spawn(
               NodeSearch(new_node, context.self, solution_node),
               solution_id.toString
@@ -43,15 +42,19 @@ class Node() {
         case ListingResponse(NodeServiceKey.Listing(listings)) =>
           context.log.info("For the send back actor references send them a new message")
           val xs: Set[ActorRef[Event]] = listings
-          xs foreach { replyTo =>
-            //#greeter-send-messages
-            //replyTo !
-          }
+            xs foreach { replyTo =>
+              replyTo ! Terminate()
+            }
+            Behaviors.stopped
+        case Terminate() =>
+          tree_node.tree_childeren.foreach(id => {
+            context.system.receptionist ! Receptionist.Find(ServiceKey[Event](id.toString), listingAdapter)
+            receive(tree_node, solution_id)
+          })
+          Behaviors.stopped
       }
-      Behaviors.same
     }
   }
-
 
   private def waitForSolution(node: TreeNode, parent_solution_node: ActorRef[SolutionEvent], solution_id: Int): Behavior[Event] = {
     Behaviors.receive { (context, message) =>
@@ -85,9 +88,9 @@ object Node {
     val listingAdapter: ActorRef[Receptionist.Listing] =
       context.messageAdapter { listing => ListingResponse(listing)}
 
-    val node = new Node()
+    val node = new Node(listingAdapter)
 
-    context.log.info("Node setup, starting to receive")
+    context.log.info("Node " + tree_node.id + " setup, starting to receive")
     node.receive(tree_node, 0)
   }
 }
