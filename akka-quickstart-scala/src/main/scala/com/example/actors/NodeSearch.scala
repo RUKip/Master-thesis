@@ -10,6 +10,7 @@ import com.example.solver.Solver
 
 import scala.jdk.CollectionConverters._
 
+//TODO: this doesnt yet send anything to SolutionNode or TopLevel
 class NodeSearch (node: TreeNode) {
 
   //For now lets just say we want the most amount of color 'red'
@@ -51,7 +52,7 @@ class NodeSearch (node: TreeNode) {
 
 
 object NodeSearch {
-  sealed trait Event //Scalas enum
+  sealed trait Event extends SolutionEvent//Scalas enum
   final case class PrintGraph() extends Event
   final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
   final case class BackTrack() extends Event

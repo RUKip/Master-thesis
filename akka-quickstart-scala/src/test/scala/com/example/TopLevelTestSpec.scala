@@ -1,8 +1,8 @@
 package com.example
 
-import akka.actor.testkit.typed.Effect.Spawned
-import akka.actor.testkit.typed.scaladsl.{ActorTestKit, BehaviorTestKit, LogCapturing}
+import akka.actor.testkit.typed.scaladsl.{ActorTestKit, LogCapturing}
 import akka.actor.typed.scaladsl.Behaviors
+import com.example.actors.Node.ReceiveSolution
 import com.example.actors.TopLevel
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.must.Matchers
@@ -26,12 +26,15 @@ class TopLevelTestSpec
   val (root_node, tree_decomposition): (TreeNode, Map[Int, TreeNode]) = InitializationHelper.getHTD(graph)
 
   "should spawn NodeSearch after receive solution" in {
-    val testKit = BehaviorTestKit(TopLevel(tree_decomposition.values.toSeq))
 //    testKit.run(Hello.CreateChild("child"))
-    testKit.expectEffect(Spawned(childActor, "1"))
-    testKit.expectEffect(Spawned(childActor, "2"))
-    testKit.expectEffect(Spawned(childActor, "3"))
-    testKit.expectEffect(Spawned(childActor, "4"))
+
+    val probe = testKit.createTestProbe[ReceiveSolution]()
+    val toplevel = testKit.spawn(TopLevel(tree_decomposition.values.toSeq))
+    probe.expectMessageType[ReceiveSolution]
+//    testKit.expectEffect(Spawned(Node(tree_decomposition.get(1).orNull), "1"))
+//    testKit.expectEffect(Spawned(Node(tree_decomposition.get(2).orNull), "2"))
+//    testKit.expectEffect(Spawned(Node(tree_decomposition.get(3).orNull), "3"))
+//    testKit.expectEffect(Spawned(Node(tree_decomposition.get(4).orNull), "4"))
   }
 
   override def afterAll(): Unit = testKit.shutdownTestKit()

@@ -55,7 +55,7 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
 }
 
 object SolutionNode {
-  sealed trait SolutionEvent//Scalas enum
+  trait SolutionEvent//Scalas enum
   final case class ReceiveOptimalSolution(solution: Solution) extends SolutionEvent
   final case class SendSolution(color_mapping: Map[Int, String]) extends SolutionEvent
   final case class ListingResponse(listing: Receptionist.Listing, from: Int) extends SolutionEvent

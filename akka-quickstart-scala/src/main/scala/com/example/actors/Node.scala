@@ -26,11 +26,13 @@ class Node() {
           )
 
         case ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) =>
+          context.log.info("Node received solution: " + parent_color_mapping.toString())
           var new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
 
           if (solution_node != null) {
             this.waitForSolution(tree_node, solution_node, solution_id)
           } else {
+
             context.spawn(
               NodeSearch(new_node, context.self, solution_node),
               solution_id.toString
@@ -84,6 +86,8 @@ object Node {
       context.messageAdapter { listing => ListingResponse(listing)}
 
     val node = new Node()
+
+    context.log.info("Node setup, starting to receive")
     node.receive(tree_node, 0)
   }
 }
