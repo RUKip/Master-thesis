@@ -26,18 +26,13 @@ class Node(listingAdapter: ActorRef[Receptionist.Listing]) {
           )
           Behaviors.same
         case ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) =>
-          context.log.info("Node received solution: " + parent_color_mapping.toString())
-          var new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
-
-          if (solution_node != null) {
-            this.waitForSolution(tree_node, solution_node, solution_id)
-          } else {
-            context.spawn(
-              NodeSearch(new_node, context.self, solution_node),
-              solution_id.toString
-            )
-            receive(new_node, solution_id + 1)
-          }
+          context.log.info("Node received solution: " + parent_color_mapping.toString() + " from solution node: " + solution_node.path.toString)
+          val new_node : TreeNode = tree_node.updateNodes(parent_color_mapping) //TODO: sure about this update?
+          context.spawn(
+            NodeSearch(new_node, context.self, solution_node),
+            solution_id.toString
+          )
+          receive(new_node, solution_id+1)
         //Response of receptionist
         case ListingResponse(NodeServiceKey.Listing(listings)) =>
           context.log.info("For the send back actor references send them a new message")
@@ -52,21 +47,6 @@ class Node(listingAdapter: ActorRef[Receptionist.Listing]) {
             receive(tree_node, solution_id)
           })
           Behaviors.stopped
-      }
-    }
-  }
-
-  private def waitForSolution(node: TreeNode, parent_solution_node: ActorRef[SolutionEvent], solution_id: Int): Behavior[Event] = {
-    Behaviors.receive { (context, message) =>
-      message match {
-        case SendSolution(solution: Map[Int, String]) => {
-          val new_node = node.updateNodes(solution)
-          context.spawn(
-            NodeSearch(new_node, context.self, parent_solution_node),
-            solution_id.toString
-          )
-          receive(new_node, solution_id+1)
-        }
       }
     }
   }
