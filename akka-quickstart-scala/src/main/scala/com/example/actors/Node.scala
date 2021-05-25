@@ -61,7 +61,7 @@ object Node {
   final case class Terminate() extends Event
 
   def apply(tree_node: TreeNode): Behavior[Event] = Behaviors.setup { context =>
-    val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](tree_node.id.toString)
+    val NodeServiceKey: ServiceKey[Event] = ServiceKey[Event](tree_node.parent.toString)
     context.system.receptionist ! Receptionist.Register(NodeServiceKey, context.self)
 
     //Defines what message is responded after the actor is requested from the receptionist
