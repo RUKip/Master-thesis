@@ -17,6 +17,7 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
       }
     }
 
+    context.log.debug("Sending request to find tree childeren: " + solution.parent.tree_childeren)
     solution.parent.tree_childeren.foreach( node =>
       context.system.receptionist ! Receptionist.Find(ServiceKey[Node.Event](node.toString), listingAdapter)
     )
@@ -36,6 +37,7 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
       Behaviors.receive { (context, message) =>
         message match {
           case ListingResponse(NodeServiceKey.Listing(listings), from) =>
+            context.log.debug("Got address from receptionist for: " + from)
             val xs: Set[ActorRef[Node.Event]] = listings
             xs foreach { replyTo =>
               sendSolution(solution, replyTo, from)
@@ -49,6 +51,10 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
               new_final_solution = final_solution.addSolution(optimal_solution)
               receive(new_final_solution, index)
             }
+          case _ =>
+            //TODO: It gets here...  message = ListingResponse(Listing(ServiceKey[com.example.actors.Node$Event](2),Set(),Set(),true),2)
+            context.log.error("Couldn't match m essage!: " + message)
+            receive(new_final_solution, index)
         }
       }
     }

@@ -17,6 +17,7 @@ public class Solver {
 
      public static List<Map<Integer, String>> solve(List<Variable> nodes, Map<Integer, Variable> mapping)
      {
+         System.out.println("Solving: " + nodes + " with mapping: " + mapping);
         HashMap<String, Integer> color_options = new HashMap<>();
         for (int i = 0; i < COLOR_MAPPING.length - 1; i++) {
             color_options.put(COLOR_MAPPING[i], i);

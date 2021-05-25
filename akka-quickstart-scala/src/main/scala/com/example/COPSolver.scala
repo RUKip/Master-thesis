@@ -1,6 +1,5 @@
 package com.example
 
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
 import com.example.actors.{Node, NodeSearch, TopLevel}
 import com.typesafe.config.ConfigFactory
