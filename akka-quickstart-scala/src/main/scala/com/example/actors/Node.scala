@@ -47,7 +47,9 @@ class Node(listingAdapter: ActorRef[Receptionist.Listing]) {
             receive(tree_node, solution_id)
           })
           Behaviors.stopped
-      }
+        case _ =>
+          context.log.error("Unexpected message: " + message)
+          Behaviors.stopped      }
     }
   }
 }
@@ -55,9 +57,8 @@ class Node(listingAdapter: ActorRef[Receptionist.Listing]) {
 object Node {
   sealed trait Event //Scalas enum
   final case class PrintGraph() extends Event
-  final case class ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) extends Event
+  final case class ReceiveSolution(parent_color_mapping: Map[Int, String], from: ActorRef[SolutionEvent]) extends Event
   final case class ListingResponse(listing: Receptionist.Listing) extends Event
-  final case class SendSolution(solution: Map[Int, String]) extends Event
   final case class Terminate() extends Event
 
   def apply(tree_node: TreeNode): Behavior[Event] = Behaviors.setup { context =>

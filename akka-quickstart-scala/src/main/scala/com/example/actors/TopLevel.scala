@@ -24,10 +24,8 @@ object TopLevel {
     //This part only has to run for one TopLevel in the distributed actorsystem
     if (tree_nodes.head.id == 1) {
 
-      //TODO: how to send context.self as a SolutionNode replacement but still be able to receive a message of type NodeSearch.Event
       //Start algorithm
       actors.head ! ReceiveSolution(Map(): Map[Int, String], context.self)
-//      actors.head ! ReceiveSolution(Map(): Map[Int, String], null)
 
       //Wait for final solution
       Behaviors.receive { (context, message) =>
@@ -39,6 +37,9 @@ object TopLevel {
             //Terminate all still running tree nodes
             actors.head ! Terminate()
 
+            Behaviors.stopped
+          case _ =>
+            context.log.error("Unexpected message: " + message)
             Behaviors.stopped
         }
       }

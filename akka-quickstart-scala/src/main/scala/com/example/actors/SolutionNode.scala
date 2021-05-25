@@ -1,14 +1,15 @@
 package com.example.actors
 
 import akka.actor.typed.{ActorRef, Behavior}
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.example.actors.SolutionNode.{ReceiveOptimalSolution, SolutionEvent}
 import com.example.{Mapping, Solution}
 
 class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_childeren_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val parent_solution_node: ActorRef[SolutionEvent]) {
 
-  def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], node_id: Int): Unit = {
-    actorRef ! Node.SendSolution(mapping.getSpecificMapping(solution, node_id))
+  def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], node_id: Int, context: ActorContext[SolutionEvent]): Unit = {
+    context.log.debug("Trying to send solution " + solution.id + " , to actor " + actorRef + "  , with id: " + node_id)
+    actorRef ! Node.ReceiveSolution(mapping.getSpecificMapping(solution, node_id), context.self)
   }
 
   def receive(final_solution: Solution, index: Int): Behavior[SolutionEvent] = {
@@ -28,9 +29,8 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
               receive(new_final_solution, index)
             }
           case _ =>
-            //TODO: It gets here...  message = ListingResponse(Listing(ServiceKey[com.example.actors.Node$Event](2),Set(),Set(),true),2)
-            context.log.error("Couldn't match message!: " + message)
-            receive(new_final_solution, index)
+            context.log.error("Unexpected message: " + message)
+            Behaviors.stopped
         }
       }
     }
@@ -51,7 +51,7 @@ object SolutionNode {
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
     val node = new SolutionNode(solution, mapping, tree_node_childeren_ids, parent_ref, context.self)
     child_refs.foreach{ case (key: Int, child_ref: ActorRef[Node.Event]) =>
-      node.sendSolution(solution, child_ref, key)
+      node.sendSolution(solution, child_ref, key, context)
     }
     node.receive(solution, 0)
   }

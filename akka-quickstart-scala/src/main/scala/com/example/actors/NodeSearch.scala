@@ -59,13 +59,15 @@ class NodeSearch (node: TreeNode, solutions: List[Map[Int, String]]) {
 
   def receiveNodeRef(): Behavior[Event] = {
     Behaviors.receive { (context, message) =>
+      context.log.debug("Node search ready to receive for node: " + node.id.toString)
       val NodeServiceKey: ServiceKey[Node.Event] = ServiceKey[Node.Event](node.id.toString)
       message match {
         case ListingResponse(NodeServiceKey.Listing(listings), from) =>
           context.log.debug("Got address from receptionist for: " + from)
           val xs: Set[ActorRef[Node.Event]] = listings
-          val child_refs: Map[Int, ActorRef[Node.Event]] = xs.zipWithIndex.map { case (replyTo, index) =>
-            (index+1, replyTo)
+          val child_refs: Map[Int, ActorRef[Node.Event]] = xs.map { replyTo =>
+            val node_id = replyTo.path.name.toInt
+            (node_id, replyTo)
           }.toMap
           mainLoop(context, null, 0, 0, child_refs)
         case _ =>
@@ -80,7 +82,7 @@ class NodeSearch (node: TreeNode, solutions: List[Map[Int, String]]) {
     val listingAdapter: ActorRef[Receptionist.Listing] =
       context.messageAdapter { listing => {
         val from: Int = listing.getKey.id.toInt
-        println("Converting: " + listing + " to: " + ListingResponse(listing, from))
+        context.log.debug("Converting: " + listing + " to: " + ListingResponse(listing, from))
         ListingResponse(listing, from)
       }
       }
