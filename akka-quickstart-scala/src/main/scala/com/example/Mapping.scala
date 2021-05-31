@@ -10,7 +10,7 @@ case class Mapping(tree_node: Int, intersection : Map[Int, List[Int]]) {
     val intersecting_variables: List[Int] = intersection(child_tree_node_id)
     var map: Map[Int, String] = Map()
     intersecting_variables.foreach(variable_id =>
-      map += (variable_id -> solution.color_mapping(variable_id))
+      map += (variable_id -> solution.bareColorMapping()(variable_id))
     )
     map
   }

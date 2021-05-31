@@ -4,7 +4,7 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
-import com.example.actors.NodeSearch.SendOptimalSolution
+import com.example.actors.SolutionNode.SendSolution
 
 class TopLevel {
 }
@@ -30,9 +30,8 @@ object TopLevel {
       //Wait for final solution
       Behaviors.receive { (context, message) =>
         message match {
-          case SendOptimalSolution(solution: Map[Int, String]) =>
-            context.log.info("Final solution is:")
-            context.log.info(solution.toString())
+          case SendSolution(solution: Map[Int, String], score) =>
+            context.log.info("Final solution is: {} {}", solution, score)
 
             //Terminate all still running tree nodes
             actors.head ! Terminate()
