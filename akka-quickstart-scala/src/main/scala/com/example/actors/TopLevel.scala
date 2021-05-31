@@ -11,7 +11,7 @@ class TopLevel {
 
 object TopLevel {
 
-  def apply(tree_nodes: Seq[TreeNode]): Behavior[SolutionNode.SolutionEvent] = Behaviors.setup[SolutionNode.SolutionEvent] { context =>
+  def apply(tree_nodes: Seq[TreeNode], amount_of_total_nodes: Int): Behavior[SolutionNode.SolutionEvent] = Behaviors.setup[SolutionNode.SolutionEvent] { context =>
 
     context.log.info("starting toplevel actor")
     //Initialize all tree node actors
@@ -20,6 +20,8 @@ object TopLevel {
         context.spawn(Node(tree_node), tree_node.id.toString)
       }
     }
+
+    //TODO: wait here untill all nodes are ready. (also can pre-receive all addresses)
 
     //This part only has to run for one TopLevel in the distributed actorsystem
     if (tree_nodes.head.id == 1) {

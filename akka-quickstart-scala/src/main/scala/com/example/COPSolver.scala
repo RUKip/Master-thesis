@@ -24,10 +24,10 @@ object COPSolver extends App {
     )
     val cluster_divided_nodes: Seq[(Int, Seq[TreeNode])] = ports zip divided_nodes
 
-//    cluster_divided_nodes.foreach {
-//        case (port, tree_nodes) => startup(port, tree_nodes)
-//    }
-    startup(ports.head, tree_decomposition.values.toSeq)
+    cluster_divided_nodes.foreach {
+        case (port, tree_nodes) => startup(port, tree_nodes)
+    }
+//    startup(ports.head, tree_decomposition.values.toSeq)
 
   //Divide here the nodes over the cluster based on tree-decomposition
     def startup(port: Int, tree_nodes: Seq[TreeNode]): Unit = {
@@ -37,6 +37,6 @@ object COPSolver extends App {
       """).withFallback(ConfigFactory.load())
 
         // Create an Akka system
-        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes), name= "COPSolver", config= config)
+        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, tree_decomposition.values.size), name= "COPSolver", config= config)
     }
 }
