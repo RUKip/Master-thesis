@@ -27,7 +27,7 @@ class Node(listingAdapter: ActorRef[Receptionist.Listing]) {
           Behaviors.same
         case ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) =>
           context.log.info("Node received solution: " + parent_color_mapping.toString() + " from solution node: " + solution_node.path.toString)
-          val new_node : TreeNode = tree_node.updateNodes(parent_color_mapping) //TODO: sure about this update?
+          val new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
           context.spawn(
             NodeSearch(new_node, context.self, solution_node),
             solution_id.toString

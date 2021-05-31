@@ -5,7 +5,7 @@ case class Mapping(tree_node: Int, intersection : Map[Int, List[Int]]) {
   //Returns subset of full solution mapping (so to only send the values that are intersecting)
   def getSpecificMapping(solution: Solution, child_tree_node_id: Int): Map[Int, String] = {
     if (solution.parent.id != tree_node) {
-      throw new Exception("Solution belnogs to different tree node")
+      throw new Exception("Solution belongs to different tree node")
     }
     val intersecting_variables: List[Int] = intersection(child_tree_node_id)
     var map: Map[Int, String] = Map()

@@ -8,7 +8,6 @@ import com.example.actors.SolutionNode.SolutionEvent
 import com.example.{Solution, TreeNode}
 import com.example.solver.SolverScalaWrapper
 
-//TODO: this doesnt yet send anything to SolutionNode or TopLevel, No aggregate yet
 class NodeSearch (node: TreeNode, parent_solution_node: ActorRef[SolutionEvent], solutions: List[Map[Int, String]], context: ActorContext[Event]) {
 
   //Defines what message is responded after the actor is requested from the receptionist
@@ -32,7 +31,6 @@ class NodeSearch (node: TreeNode, parent_solution_node: ActorRef[SolutionEvent],
     cost
   }
 
-  //TODO; does this wait activly for a solution? As we also not to create the agent and need to send
   def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Map[Int, String], best_score: Int, index: Int, child_refs: Map[Int, ActorRef[Node.Event]]): Behavior[Event] = {
     if (solutions.size > index) {
       val current_solution = node.updateNodes(solutions(index)).full_graph_mapping
@@ -102,8 +100,6 @@ class NodeSearch (node: TreeNode, parent_solution_node: ActorRef[SolutionEvent],
 object NodeSearch {
   sealed trait Event extends SolutionEvent//Scalas enum
   final case class PrintGraph() extends Event
-  final case class Initialize(parent_color_mapping: Map[Int, String]) extends Event
-  final case class BackTrack() extends Event
   final case class SendOptimalSolution(solution: Map[Int, String]) extends Event
   final case class ListingResponse(listing: Receptionist.Listing, from: Int) extends Event
 

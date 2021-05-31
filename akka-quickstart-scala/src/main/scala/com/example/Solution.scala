@@ -18,7 +18,7 @@ case class Solution(id: String, parent: TreeNode, color_mapping: Map[Int, Variab
     }
   }
 
-  /** Only the bare minimum for color mapping, doesn't pass Variable */
+  /** Only the bare minimum for color mapping, doesn't pass Variable (used in messages) */
   def bareColorMapping(): Map[Int, String] = {
     color_mapping.map { case (key, value) =>
       (key -> value.color)
