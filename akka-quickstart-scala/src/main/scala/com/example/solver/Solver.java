@@ -17,7 +17,7 @@ public class Solver {
 
      public static List<Map<Integer, String>> solve(List<Variable> nodes, Map<Integer, Variable> mapping)
      {
-         System.out.println("Solving: " + nodes + " with mapping: " + mapping);
+//         System.out.println("Solving: " + nodes + " with mapping: " + mapping);
         HashMap<String, Integer> color_options = new HashMap<>();
         for (int i = 0; i < COLOR_MAPPING.length - 1; i++) {
             color_options.put(COLOR_MAPPING[i], i);
@@ -35,8 +35,8 @@ public class Solver {
                 //Create constraints for already set colors
                 for (Integer id : node.connectedAsJava()) {
                     Variable connected_node = mapping.get(id);
-                    System.out.println("ID: " + id);
-                    System.out.println("Connected node: " + connected_node);
+//                    System.out.println("ID: " + id);
+//                    System.out.println("Connected node: " + connected_node);
 
                     if ( ! connected_node.color().equals("Blank")) {
                         model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();

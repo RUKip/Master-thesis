@@ -1,7 +1,7 @@
 package com.example
 
-import akka.actor.typed.{ActorSystem, Behavior}
-import com.example.actors.{Node, NodeSearch, TopLevel}
+import akka.actor.typed.ActorSystem
+import com.example.actors.{NodeSearch, TopLevel}
 import com.typesafe.config.ConfigFactory
 
 object COPSolver extends App {
@@ -24,9 +24,10 @@ object COPSolver extends App {
     )
     val cluster_divided_nodes: Seq[(Int, Seq[TreeNode])] = ports zip divided_nodes
 
-    cluster_divided_nodes.foreach {
-        case (port, tree_nodes) => startup(port, tree_nodes)
-    }
+//    cluster_divided_nodes.foreach {
+//        case (port, tree_nodes) => startup(port, tree_nodes)
+//    }
+    startup(ports.head, tree_decomposition.values.toSeq)
 
   //Divide here the nodes over the cluster based on tree-decomposition
     def startup(port: Int, tree_nodes: Seq[TreeNode]): Unit = {

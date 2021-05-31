@@ -8,7 +8,7 @@ import com.example.{Mapping, Solution}
 class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_childeren_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val parent_solution_node: ActorRef[SolutionEvent]) {
 
   def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], node_id: Int, context: ActorContext[SolutionEvent]): Unit = {
-    context.log.debug("Trying to send solution " + solution.id + " , to actor " + actorRef + "  , with id: " + node_id)
+    context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef + "  , with id: " + node_id)
     actorRef ! Node.ReceiveSolution(mapping.getSpecificMapping(solution, node_id), context.self)
   }
 
