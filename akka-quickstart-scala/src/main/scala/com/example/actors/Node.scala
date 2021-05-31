@@ -42,14 +42,16 @@ class Node(listingAdapter: ActorRef[Receptionist.Listing]) {
             }
             Behaviors.stopped
         case Terminate() =>
-          tree_node.tree_childeren.foreach(id => {
-            context.system.receptionist ! Receptionist.Find(ServiceKey[Event](id.toString), listingAdapter)
+          context.log.info("Terminating..")
+          tree_node.tree_childeren.foreach(_ => {
+            context.system.receptionist ! Receptionist.Find(ServiceKey[Event](tree_node.id.toString), listingAdapter)
             receive(tree_node, solution_id)
           })
-          Behaviors.stopped
+          Behaviors.same
         case _ =>
           context.log.error("Unexpected message: " + message)
-          Behaviors.stopped      }
+          Behaviors.stopped
+      }
     }
   }
 }
