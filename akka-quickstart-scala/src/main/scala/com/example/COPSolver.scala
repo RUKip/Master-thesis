@@ -37,6 +37,6 @@ object COPSolver extends App {
       """).withFallback(ConfigFactory.load())
 
         // Create an Akka system
-        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, tree_decomposition.values.size), name= "COPSolver", config= config)
+        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, ports.size), name= "COPSolver", config= config)
     }
 }
