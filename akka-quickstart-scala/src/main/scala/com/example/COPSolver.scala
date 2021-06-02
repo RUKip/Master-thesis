@@ -18,22 +18,24 @@ object COPSolver extends App {
     //This matches with the config file
     val ports = Seq(25251, 25252)
 
-    //TODO: Here the nodes are divided (here should be to test different cluster deployments)
-    val divided_nodes = tree_decomposition.values.toSeq.grouped(
-        math.ceil(tree_decomposition.values.size.doubleValue() / ports.length.doubleValue()).toInt
-    )
-    val cluster_divided_nodes: Seq[(Int, Seq[TreeNode])] = ports zip divided_nodes
+//    //TODO: Here the nodes are divided (here should be to test different cluster deployments)
+//    val divided_nodes = tree_decomposition.values.toSeq.grouped(
+//        math.ceil(tree_decomposition.values.size.doubleValue() / ports.length.doubleValue()).toInt
+//    )
+//    val cluster_divided_nodes: Seq[(Int, Seq[TreeNode])] = ports zip divided_nodes
 
-    cluster_divided_nodes.foreach {
-        case (port, tree_nodes) => startup(port, tree_nodes)
-    }
+    val master_port = ports.head
+    startup("master", master_port, tree_decomposition)
+    ports.tail.foreach(port => startup("worker", port, tree_decomposition))
+
 //    startup(ports.head, tree_decomposition.values.toSeq)
 
   //Divide here the nodes over the cluster based on tree-decomposition
-    def startup(port: Int, tree_nodes: Seq[TreeNode]): Unit = {
+    def startup(role: String, port: Int, tree_nodes: Map[Int, TreeNode]): Unit = {
         // Override the configuration of the port
         val config = ConfigFactory.parseString(s"""
       akka.remote.artery.canonical.port=$port
+      akka.cluster.roles = [$role]
       """).withFallback(ConfigFactory.load())
 
         // Create an Akka system

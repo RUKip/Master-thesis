@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.{Mapping, Solution}
 
-class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_childeren_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val context: ActorContext[SolutionEvent]) {
+class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_children_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val context: ActorContext[SolutionEvent]) {
 
   def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], node_id: Int): Unit = {
     context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef + "  , with id: " + node_id)
@@ -14,7 +14,7 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
 
   def receive(final_solution: Solution, index: Int): Behavior[SolutionEvent] = {
     var new_final_solution = final_solution
-    if (index == tree_node_childeren_ids.size) {
+    if (index == tree_node_children_ids.size) {
       context.log.info("Done aggregating, sending optimal solution {}", final_solution.bareColorMapping())
       parent_node ! NodeSearch.SendOptimalSolution(final_solution.bareColorMapping())
       Behaviors.stopped
@@ -46,11 +46,11 @@ object SolutionNode {
   def apply(
              solution: Solution,
              mapping: Mapping,
-             tree_node_childeren_ids: List[Int],
+             tree_node_children_ids: List[Int],
              parent_ref: ActorRef[NodeSearch.Event],
              child_refs: Map[Int, ActorRef[Node.Event]]
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
-    val node = new SolutionNode(solution, mapping, tree_node_childeren_ids, parent_ref, context)
+    val node = new SolutionNode(solution, mapping, tree_node_children_ids, parent_ref, context)
     child_refs.foreach{ case (key: Int, child_ref: ActorRef[Node.Event]) =>
       node.sendSolution(solution, child_ref, key)
     }

@@ -4,7 +4,7 @@ package com.example
 case class TreeNode(
                      id: Int,
                      parent: Int,
-                     tree_childeren: List[Int],
+                     tree_children: List[Int],
                      graph_variables: List[Int],
                      full_graph_mapping: Map[Int, Variable],
                      parent_connected: List[Int],
