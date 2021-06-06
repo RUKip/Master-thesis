@@ -4,7 +4,8 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.example.actors.Node._
 import com.example.actors.SolutionNode.SolutionEvent
-import com.example.TreeNode
+import com.example.{CborSerializable, TreeNode}
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
 //This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)
 class Node(child_refs: Map[Int, ActorRef[Node.Event]]) {
@@ -46,9 +47,9 @@ class Node(child_refs: Map[Int, ActorRef[Node.Event]]) {
 }
 
 object Node {
-  sealed trait Event //Scalas enum
+  sealed trait Event extends CborSerializable //Scalas enum
   final case class PrintGraph() extends Event
-  final case class ReceiveSolution(parent_color_mapping: Map[Int, String], from: ActorRef[SolutionEvent]) extends Event
+  final case class ReceiveSolution(@JsonDeserialize(keyAs = classOf[Int]) parent_color_mapping: Map[Int, String], from: ActorRef[SolutionEvent]) extends Event
   final case class Terminate() extends Event
 
   def apply(tree_node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]]): Behavior[Event] = Behaviors.setup { context =>

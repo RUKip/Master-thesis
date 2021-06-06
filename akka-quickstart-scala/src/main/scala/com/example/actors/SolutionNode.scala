@@ -3,7 +3,8 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
-import com.example.{Mapping, Solution}
+import com.example.{CborSerializable, Mapping, Solution}
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
 class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_children_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val context: ActorContext[SolutionEvent]) {
 
@@ -40,8 +41,8 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
 }
 
 object SolutionNode {
-  trait SolutionEvent//Scalas enum
-  final case class SendSolution(color_mapping: Map[Int, String], score: Int) extends SolutionEvent
+  trait SolutionEvent extends CborSerializable//Scalas enum
+  final case class SendSolution(@JsonDeserialize(keyAs = classOf[Int]) color_mapping: Map[Int, String], score: Int) extends SolutionEvent
 
   def apply(
              solution: Solution,

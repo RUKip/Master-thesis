@@ -6,6 +6,7 @@ import com.example.actors.NodeSearch.{Event, PrintGraph, SendOptimalSolution}
 import com.example.actors.SolutionNode.SolutionEvent
 import com.example.{Solution, TreeNode}
 import com.example.solver.SolverScalaWrapper
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
 class NodeSearch (node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], parent_solution_node: ActorRef[SolutionEvent], solutions: List[Map[Int, String]], context: ActorContext[Event]) {
 
@@ -71,7 +72,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], pa
 object NodeSearch {
   sealed trait Event extends SolutionEvent//Scalas enum
   final case class PrintGraph() extends Event
-  final case class SendOptimalSolution(solution: Map[Int, String]) extends Event
+  final case class SendOptimalSolution(@JsonDeserialize(keyAs = classOf[Int]) solution: Map[Int, String]) extends Event
 
   def apply(node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
     val solutions = SolverScalaWrapper.calcSolutions(node)

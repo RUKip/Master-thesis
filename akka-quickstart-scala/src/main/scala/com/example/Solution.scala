@@ -7,7 +7,7 @@ case class Solution(id: String, parent: TreeNode, color_mapping: Map[Int, Variab
       this.copy(color_mapping = Map(), score = 0)
     } else {
       val merged_mapping = added_color_mapping.map {
-        case (key, value) =>
+        case (key: Int, value: String) =>
           if (value == "Blank") {
             (key -> color_mapping(key))
           } else {
@@ -20,7 +20,7 @@ case class Solution(id: String, parent: TreeNode, color_mapping: Map[Int, Variab
 
   /** Only the bare minimum for color mapping, doesn't pass Variable (used in messages) */
   def bareColorMapping(): Map[Int, String] = {
-    color_mapping.map { case (key, value) =>
+    color_mapping.map { case (key: Int, value: Variable) =>
       (key -> value.color)
     }
   }
