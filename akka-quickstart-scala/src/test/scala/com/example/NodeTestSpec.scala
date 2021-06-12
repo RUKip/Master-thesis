@@ -24,7 +24,6 @@ class NodeTestSpec  extends AnyWordSpec
     val tree = InitializationHelper.createUsableTree(base)
     println("******")
     println(tree.head._2.full_graph_mapping)
-//    println(InitializationHelper.bindGroupings(Map(base.head), base.tail, base, 2, Map()))
-    //override def afterAll(): Unit = testKit.shutdownTestKit()
+    tree.foreach { case (id, node) => println(id + " " + node.copy(full_graph_mapping = Map()))}
   }
 }

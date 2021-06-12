@@ -70,7 +70,7 @@ object InitializationHelper {
       if (depth == 1) {
         //Root node case
         val id = 1
-        children = children :+ (id, BaseTreeNode(id, parent, variables = Range(start_index, start_index + width_node).toList))
+        children = children :+ (id, BaseTreeNode(id, 0, variables = Range(start_index, start_index + width_node).toList))
         children = children ++ createTreeStructure(branching_factor, width, id, start_index + width_node, depth + 1, max_depth)
       } else {
         val branches = Random.nextInt(branching_factor)
@@ -95,15 +95,15 @@ object InitializationHelper {
     //Grouped by key
     val grouped = lose_values.groupBy(_._1)
     //Now merge
-    val full_graph_mapping: Map[Int, Variable] = grouped.view.mapValues(_.flatMap(_._2).toList).toMap.map { case (id, variables) =>
+    val full_graph_mapping: Map[Int, Variable] = grouped.view.mapValues(_.flatMap(_._2).toList.distinct).toMap.map { case (id, variables) =>
       (id -> Variable(id, variables, "Blank"))
     }
 
     base_map.map { case (id, node) =>
       val tree_children = base.filter {
-        case (id, base_node) => base_node.parent == id
-      }.map { case (id, _) =>
-        id
+        case (_, base_node) => base_node.parent == id
+      }.map { case (base_id, _) =>
+        base_id
       }.toList
 
       val mapping =  Mapping(id, tree_children.map(child_id => (child_id -> base_map(child_id).variables.intersect(node.variables))).toMap)
