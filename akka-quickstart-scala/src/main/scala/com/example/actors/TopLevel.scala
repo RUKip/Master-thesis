@@ -8,7 +8,7 @@ import akka.cluster.typed.{Cluster, Subscribe}
 import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
-import com.example.actors.TopLevel.{TopLevelServiceKey, startAlgorithm, matchToActorRef, spawnNode, storedActorReferences}
+import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
 
 class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int) {
 
@@ -58,7 +58,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
         context.log.info("Registering new ref: {} with id {}", ref, id)
         storedActorReferences += (id -> ref)
         if (storedActorReferences.size == all_tree_nodes.size) {
-          startAlgorithm(storedActorReferences(1), context)
+          startAlgorithm(storedActorReferences(1))
         } else if (depth == nodes.size) {
           context.log.info("Dividing next level of nodes")
           val next_parent_nodes = nodes.map { node =>
@@ -83,6 +83,40 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
       context.self ! RegisterNodeRef(tree_node.id, actor_ref)
     } else {
       topLevelActor ! CreateNode(tree_node.id, matchToActorRef(tree_node.tree_children), context.self)
+    }
+  }
+
+  def spawnNode(tree_node: TreeNode, children: Map[Int, ActorRef[Node.Event]], context: ActorContext[SolutionEvent]): ActorRef[Node.Event] = {
+    context.log.info("Spawning actor for tree_node: " + tree_node.id.toString)
+    context.spawn(Node(tree_node, children), tree_node.id.toString)
+  }
+
+  def matchToActorRef(children: List[Int]): Map[Int, ActorRef[Node.Event]] = {
+    children.map(id =>
+      (id -> storedActorReferences(id))
+    ).toMap
+  }
+
+  def startAlgorithm(root_actor: ActorRef[Node.Event]):  Behavior[SolutionNode.SolutionEvent] = {
+    //This part only has to run for one TopLevel in the distributed actorsystem
+    context.log.info("Executing from master")
+    //Start algorithm
+    root_actor ! ReceiveSolution(Map(): Map[Int, String], context.self)
+
+    //Wait for final solution
+    Behaviors.receive { (ctx, message) =>
+      message match {
+        case SendSolution(solution: Map[Int, String], score) =>
+          context.log.info("Final solution is: {} {}", solution, score)
+
+          //Terminate all still running tree nodes
+          root_actor ! Terminate()
+
+          Behaviors.stopped
+        case _ =>
+          context.log.error("Unexpected message: " + message)
+          Behaviors.stopped
+      }
     }
   }
 }
@@ -119,40 +153,5 @@ object TopLevel {
       Cluster(context.system).subscriptions ! Subscribe(memberEventAdapter, classOf[MemberEvent])
 
       topLevelActor.receive()
-  }
-
-  def startAlgorithm(root_actor: ActorRef[Node.Event], context: ActorContext[SolutionEvent]):  Behavior[SolutionNode.SolutionEvent] ={
-        //This part only has to run for one TopLevel in the distributed actorsystem
-          context.log.info("Executing from master")
-          //Start algorithm
-          root_actor ! ReceiveSolution(Map(): Map[Int, String], context.self)
-
-          //Wait for final solution
-          Behaviors.receive { (ctx, message) =>
-            message match {
-              case SendSolution(solution: Map[Int, String], score) =>
-                context.log.info("Final solution is: {} {}", solution, score)
-
-                //Terminate all still running tree nodes
-                root_actor ! Terminate()
-
-                Behaviors.stopped
-              case _ =>
-                context.log.error("Unexpected message: " + message)
-                Behaviors.stopped
-            }
-          }
-  }
-
-
-  def spawnNode(tree_node: TreeNode, children: Map[Int, ActorRef[Node.Event]], context: ActorContext[SolutionEvent]): ActorRef[Node.Event] = {
-    context.log.info("Spawning actor for tree_node: " + tree_node.id.toString)
-    context.spawn(Node(tree_node, children), tree_node.id.toString)
-  }
-
-  def matchToActorRef(children: List[Int]): Map[Int, ActorRef[Node.Event]] = {
-    children.map(id =>
-      (id -> storedActorReferences(id))
-    ).toMap
   }
 }

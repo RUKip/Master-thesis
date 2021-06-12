@@ -26,8 +26,8 @@ class TopLevelTestSpec
   val (root_node, tree_decomposition): (TreeNode, Map[Int, TreeNode]) = InitializationHelper.getHTD(graph)
 
   "should spawn NodeSearch after receive solution" in {
-//    testKit.run(Hello.CreateChild("child"))
 
+    //    testKit.run(Hello.CreateChild("child"))
     val probe = testKit.createTestProbe[ReceiveSolution]()
     val toplevel = testKit.spawn(TopLevel(tree_decomposition, 1))
     probe.expectMessageType[ReceiveSolution]

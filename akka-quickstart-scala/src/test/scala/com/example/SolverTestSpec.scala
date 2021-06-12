@@ -39,7 +39,7 @@ class SolverTestSpec extends AnyFlatSpec with should.Matchers {
     |
  (4,5,6)
 */
-  val root = TreeNode(1, 0, List(2, 3), List(2,3,4), mapping, List(), Mapping(1, Map(2 -> List(3,4), 3 -> List(2))))
+  val root = TreeNode(1, 0, List(2, 3), List(2,3,4), mapping, Mapping(1, Map(2 -> List(3,4), 3 -> List(2))))
 
   "A solution" should "give all solutions" in {
 

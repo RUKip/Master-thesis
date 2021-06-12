@@ -7,7 +7,6 @@ case class TreeNode(
                      tree_children: List[Int],
                      graph_variables: List[Int],
                      full_graph_mapping: Map[Int, Variable],
-                     parent_connected: List[Int],
                      child_connected: Mapping
                    ) {
 
