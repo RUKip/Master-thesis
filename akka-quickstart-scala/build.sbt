@@ -10,6 +10,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
   "io.aeron" % "aeron-driver" % "1.32.0",
   "io.aeron" % "aeron-client" % "1.32.0",
+  "net.liftweb" %% "lift-json" % "3.4.3",
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,

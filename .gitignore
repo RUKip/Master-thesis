@@ -2,3 +2,5 @@
 *.log
 target/
 .idea/
+generated_trees/*
+!generated_trees/1_generated_tree.json

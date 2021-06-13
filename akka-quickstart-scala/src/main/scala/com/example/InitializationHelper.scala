@@ -1,9 +1,19 @@
 package com.example
 
+import net.liftweb.json
+import net.liftweb.json.Extraction.decompose
+import net.liftweb.json.JsonAST._
+import net.liftweb.json.JsonDSL._
+import scala.jdk.CollectionConverters._
+
+import java.io.{BufferedWriter, File, FileWriter}
+import scala.io.Source
 import scala.util.Random
 
 object InitializationHelper {
-  
+
+  implicit val formats = net.liftweb.json.DefaultFormats
+
   /* Graph structure like:
         1
         |
@@ -63,6 +73,7 @@ object InitializationHelper {
     (root, mapping)
   }
 
+  //Generates a base tree structure to build a real HTD tree from (this is not deterministic)
   def createTreeStructure(branching_factor: Int = 3, width: Int = 4, parent: Int, start_index: Int, depth: Int, max_depth: Int): Seq[(Int, BaseTreeNode)] = {
     var children: Seq[(Int, BaseTreeNode)] = Seq()
     if (max_depth > depth) {
@@ -85,6 +96,7 @@ object InitializationHelper {
     children
   }
 
+  //Converts base structure to something usable (should always be deterministic)
   def createUsableTree(base: Seq[(Int, BaseTreeNode)]): Map[Int, TreeNode] = {
     val base_map: Map[Int, BaseTreeNode] = base.toMap
 
@@ -110,5 +122,31 @@ object InitializationHelper {
 
       (id -> TreeNode (id, node.parent, tree_children, node.variables, full_graph_mapping, mapping))
     }
+  }
+
+  def storeTree(tree: Seq[(Int, BaseTreeNode)], file_name: String): Unit = {
+    val file = new File(file_name)
+    val bw = new BufferedWriter(new FileWriter(file))
+
+    val json = tree.map {
+      case (id, node: BaseTreeNode) => (id.toString -> decompose(node))
+    }.toMap
+
+    val jsonString = compactRender(json)
+
+    println("writing: " + jsonString)
+    bw.write(jsonString)
+    bw.close()
+  }
+
+  def loadTree(file_name: String): Seq[(Int, BaseTreeNode)] = {
+    val bufferedSource = Source.fromFile(file_name)
+    val tree_string: String = bufferedSource.getLines.mkString
+    bufferedSource.close
+    val tree = json.parse(tree_string)
+
+    //Below needed because of a bug in lift json, unable to convert correctly from under laying java code
+    val converted_tree = tree.extract[Map[String, BaseTreeNode]].toSeq
+    converted_tree.map { case (key: String, value: BaseTreeNode) => (key.toInt -> value) }
   }
 }

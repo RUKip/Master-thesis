@@ -19,11 +19,15 @@ class NodeTestSpec  extends AnyWordSpec
 
   "should spawn NodeSearch after receive solution" in {
 //    val base = InitializationHelper.generateBase(0, Range(1, 10), 3, List())
-    val base = InitializationHelper.createTreeStructure(3,4,1,1,1,10)
-    println(base.toMap)
-    val tree = InitializationHelper.createUsableTree(base)
-    println("******")
-    println(tree.head._2.full_graph_mapping)
-    tree.foreach { case (id, node) => println(id + " " + node.copy(full_graph_mapping = Map()))}
+//    val base = InitializationHelper.createTreeStructure(3,4,1,1,1,10)
+//    println(base.toMap)
+//    val tree = InitializationHelper.createUsableTree(base)
+//    println("******")
+////    println(tree.head._2.full_graph_mapping)
+////    tree.foreach { case (id, node) => println(id + " " + node.copy(full_graph_mapping = Map()))}
+//    val file_name = "1_generated_tree.json"
+//    InitializationHelper.storeTree(base, file_name)
+//    val loaded_base = InitializationHelper.loadTree(file_name)
+//    assert(base.toString() == loaded_base.toString())
   }
 }
