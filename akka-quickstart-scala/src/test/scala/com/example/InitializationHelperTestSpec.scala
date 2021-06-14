@@ -10,7 +10,7 @@ class InitializationHelperTestSpec  extends AnyWordSpec
   with LogCapturing
   with Matchers {
 
-  "should spawn NodeSearch after receive solution" in {
+  "should load some tree as before storing" in {
     //    val base = InitializationHelper.generateBase(0, Range(1, 10), 3, List())
     val base = InitializationHelper.createTreeStructure(3,4,1,1,1,10)
     println(base.toMap)

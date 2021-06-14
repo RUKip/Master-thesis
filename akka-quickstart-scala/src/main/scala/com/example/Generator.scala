@@ -9,7 +9,6 @@ object Generator extends App {
     createTree(id)
   })
 
-
   def createTree(id: Int): Unit = {
     println("Trying to generate...")
     val base = InitializationHelper.createTreeStructure(3, 4, 1, 1, 1, 10)
