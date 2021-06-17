@@ -8,7 +8,7 @@ import com.example.{Solution, TreeNode}
 import com.example.solver.SolverScalaWrapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
-class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_solution_node: ActorRef[SolutionEvent], solutions: List[Map[Int, String]], context: ActorContext[Event]) {
+class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_solution_node: ActorRef[SolutionEvent], context: ActorContext[Event]) {
 
   //For now lets just say we want the most amount of color 'red'
   def calcCost(color_mapping: Map[Int, String]): Int = {
@@ -22,10 +22,11 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     cost
   }
 
-  def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, index: Int): Behavior[Event] = {
-    if (solutions.size > index) {
-      val current_solution = node.updateNodes(solutions(index)).full_graph_mapping
-      val solution_id = node.id.toString + "_" + index
+  def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]]): Behavior[Event] = {
+    if (solutions.nonEmpty) {
+      val solution = solutions.head
+      val current_solution = node.updateNodes(solution).full_graph_mapping
+      val solution_id = node.id.toString + "_" + solutions.size
 
       val solution_actor = context.spawn(
         SolutionNode(Solution(solution_id, node, current_solution, 0), node.tree_children, context.self, child_refs),
@@ -36,9 +37,9 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
           case SendOptimalSolution(solution: Option[Map[Int, String]]) =>
             val cost = this.calcCost(solution.getOrElse(Map()))
             if (cost > best_score) {
-              mainLoop(context, solution, cost, index + 1)
+              mainLoop(context, solution, cost, solutions.tail)
             } else {
-              mainLoop(context, best_solution, best_score, index + 1)
+              mainLoop(context, best_solution, best_score, solutions.tail)
             }
           case PrintGraph() =>
             context.log.info(
@@ -66,9 +67,9 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     }
   }
 
-  def receiveNodeRef(): Behavior[Event] = {
+  def receiveNodeRef(solutions: List[Map[Int, String]]): Behavior[Event] = {
     context.log.info("Node search ready to receive for node: " + node.id.toString)
-    mainLoop(context, None, 0, 0)
+    mainLoop(context, None, 0, solutions)
   }
 }
 
@@ -81,14 +82,14 @@ object NodeSearch {
     val solutions = SolverScalaWrapper.calcSolutions(node)
     context.log.info("For node " + node.graph_variables + " Solution: {}", solutions)
 
-    val node_search = new NodeSearch(node, child_refs, parent_solution_node, solutions, context)
+    val node_search = new NodeSearch(node, child_refs, parent_solution_node, context)
 
     if(solutions.isEmpty) {
       context.log.info("No solutions, stopping")
       parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
       Behaviors.stopped
     } else {
-      node_search.receiveNodeRef()
+      node_search.receiveNodeRef(solutions)
     }
   }
 }
