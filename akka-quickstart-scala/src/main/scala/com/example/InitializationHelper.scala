@@ -85,6 +85,8 @@ object InitializationHelper {
         children = children ++ createTreeStructure(branching_factor, width, id, start_index + width_node, depth + 1, max_depth)
       } else {
         val branches = Random.nextInt(branching_factor)
+        //val previous_overlap
+        val range = Range(start_index, start_index + width_node*branches)
         Range(1, branches + 1).foreach { nr =>
           val overlap = math.min(Random.nextInt(width_node - 1) + 1, width_node-1) //Overlap max width - 1 and min overlap 1
           val id: Int = (depth.toString + nr.toString).toInt

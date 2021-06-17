@@ -22,7 +22,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], pa
     cost
   }
 
-  def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Map[Int, String], best_score: Int, index: Int): Behavior[Event] = {
+  def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, index: Int): Behavior[Event] = {
     if (solutions.size > index) {
       val current_solution = node.updateNodes(solutions(index)).full_graph_mapping
       val solution_id = node.id.toString + "_" + index
@@ -33,8 +33,8 @@ class NodeSearch (node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], pa
       )
       Behaviors.receive { (context, message) =>
         message match {
-          case SendOptimalSolution(solution) =>
-            val cost = this.calcCost(solution)
+          case SendOptimalSolution(solution: Option[Map[Int, String]]) =>
+            val cost = this.calcCost(solution.getOrElse(Map()))
             if (cost > best_score) {
               mainLoop(context, solution, cost, index + 1)
             } else {
@@ -57,22 +57,25 @@ class NodeSearch (node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], pa
       }
     } else {
       context.log.info("Found local best solution: {}, score: {}, stopping...", best_solution, best_score)
-      parent_solution_node ! SolutionNode.SendSolution(best_solution, best_score)
+      if (best_solution.isEmpty) {
+        parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
+      } else {
+        parent_solution_node ! SolutionNode.SendSolution(best_solution.get, best_score)
+      }
       Behaviors.stopped
     }
   }
 
   def receiveNodeRef(): Behavior[Event] = {
     context.log.info("Node search ready to receive for node: " + node.id.toString)
-    mainLoop(context, null, 0, 0)
+    mainLoop(context, None, 0, 0)
   }
 }
-
 
 object NodeSearch {
   sealed trait Event extends SolutionEvent//Scalas enum
   final case class PrintGraph() extends Event
-  final case class SendOptimalSolution(@JsonDeserialize(keyAs = classOf[Int]) solution: Map[Int, String]) extends Event
+  final case class SendOptimalSolution(@JsonDeserialize(keyAs = classOf[Int]) solution: Option[Map[Int, String]]) extends Event
 
   def apply(node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
     val solutions = SolverScalaWrapper.calcSolutions(node)

@@ -17,15 +17,15 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
     var new_final_solution = final_solution
     if (index == tree_node_children_ids.size) {
       context.log.info("Done aggregating, sending optimal solution {}", final_solution.bareColorMapping())
-      parent_node ! NodeSearch.SendOptimalSolution(final_solution.bareColorMapping())
+      parent_node ! NodeSearch.SendOptimalSolution(Option(final_solution.bareColorMapping()))
       Behaviors.stopped
     } else {
       Behaviors.receive { (context, message) =>
         message match {
-          case SendSolution(optimal_solution, score) =>
+          case SendSolution(optimal_solution: Map[Int, String], score: Int) =>
             context.log.info("Received a solution: {} {}", optimal_solution, score)
             if (optimal_solution.isEmpty) {
-              parent_node ! NodeSearch.SendOptimalSolution(null)
+              parent_node ! NodeSearch.SendOptimalSolution(None)
               Behaviors.stopped
             } else {
               new_final_solution = final_solution.aggregateSolution(optimal_solution, score)
@@ -52,6 +52,7 @@ object SolutionNode {
              child_refs: Map[Int, ActorRef[Node.Event]]
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
     val node = new SolutionNode(solution, mapping, tree_node_children_ids, parent_ref, context)
+//    dont ask my why but if you remove this comment you get an Java String to Integer conversion error
     child_refs.foreach{ case (key: Int, child_ref: ActorRef[Node.Event]) =>
       node.sendSolution(solution, child_ref, key)
     }

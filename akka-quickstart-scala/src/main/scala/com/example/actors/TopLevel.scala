@@ -10,6 +10,8 @@ import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
 
+import scala.jdk.CollectionConverters._
+
 class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int) {
 
   def receive(): Behavior[SolutionNode.SolutionEvent] ={
@@ -93,7 +95,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
 
   def matchToActorRef(children: List[Int]): Map[Int, ActorRef[Node.Event]] = {
     children.map(id =>
-      (id -> storedActorReferences(id))
+      (id.toInt -> storedActorReferences(id))
     ).toMap
   }
 
