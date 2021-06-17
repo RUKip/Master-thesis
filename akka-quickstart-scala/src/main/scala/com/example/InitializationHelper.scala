@@ -24,8 +24,6 @@ object InitializationHelper {
       5 - 6
    */
   def initAGraph(): Map[Int, Variable] = {
-    var mapping: Map[Int, Variable] = Map()
-
     val node1 = Variable(1, List(2), "Blank")
     val node2 = Variable(2, List(1,3,4), "Blank")
     val node3 = Variable(3, List(2,4,5), "Blank")
@@ -33,13 +31,7 @@ object InitializationHelper {
     val node5 = Variable(5, List(3,6), "Blank")
     val node6 = Variable(6, List(4,5), "Blank")
 
-    mapping += (1 -> node1)
-    mapping += (2 -> node2)
-    mapping += (3 -> node3)
-    mapping += (4 -> node4)
-    mapping += (5 -> node5)
-    mapping += (6 -> node6)
-
+    val mapping: Map[Int, Variable] = Map((1 -> node1), (2 -> node2), (3 -> node3), (4 -> node4), (5 -> node5), (6 -> node6))
     mapping
   }
 
@@ -58,18 +50,12 @@ object InitializationHelper {
    (4,5,6)
  */
   def getHTD(graph_mapping: Map[Int, Variable]): (TreeNode, Map[Int, TreeNode]) = {
-    var mapping: Map[Int, TreeNode] = Map()
+    val root = TreeNode(1, 0, List(2, 3), List(2,3,4), graph_mapping, Map(2 -> List(3,4), 3 -> List(2)))
+    val node2 = TreeNode(2, 1, List(4), List(3,4,5), graph_mapping, Map(4 -> List(4,5)))
+    val node3 = TreeNode(3, 1, List(), List(1,2), graph_mapping, Map())
+    val node4 = TreeNode(4, 2, List(), List(4,5,6), graph_mapping, Map())
 
-    val root = TreeNode(1, 0, List(2, 3), List(2,3,4), graph_mapping, Mapping(1, Map(2 -> List(3,4), 3 -> List(2))))
-    val node2 = TreeNode(2, 1, List(4), List(3,4,5), graph_mapping, Mapping(2, Map(4 -> List(4,5))))
-    val node3 = TreeNode(3, 1, List(), List(1,2), graph_mapping, Mapping(3,Map()))
-    val node4 = TreeNode(4, 2, List(), List(4,5,6), graph_mapping, Mapping(4,Map()))
-
-    mapping += (1 -> root)
-    mapping += (2 -> node2)
-    mapping += (3 -> node3)
-    mapping += (4 -> node4)
-
+    val mapping: Map[Int, TreeNode] = Map((1 -> root), (2 -> node2), (3 -> node3), (4 -> node4))
     (root, mapping)
   }
 
@@ -120,7 +106,7 @@ object InitializationHelper {
         base_id
       }.toList
 
-      val mapping =  Mapping(id, tree_children.map(child_id => (child_id -> base_map(child_id).variables.intersect(node.variables))).toMap)
+      val mapping = tree_children.map(child_id => (child_id -> base_map(child_id).variables.intersect(node.variables))).toMap
 
       (id -> TreeNode (id, node.parent, tree_children, node.variables, full_graph_mapping, mapping))
     }

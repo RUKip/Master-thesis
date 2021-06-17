@@ -7,7 +7,7 @@ case class TreeNode(
                      tree_children: List[Int],
                      graph_variables: List[Int],
                      full_graph_mapping: Map[Int, Variable],
-                     child_connected: Mapping
+                     child_connected: Map[Int, List[Int]]
                    ) {
 
   def getGraphNodes: Seq[Variable] = {

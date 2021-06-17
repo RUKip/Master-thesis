@@ -3,14 +3,14 @@ package com.example.actors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
-import com.example.{CborSerializable, Mapping, Solution}
+import com.example.{CborSerializable, Solution}
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
-class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_children_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val context: ActorContext[SolutionEvent]) {
+class SolutionNode(val solution: Solution, val tree_node_children_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val context: ActorContext[SolutionEvent]) {
 
-  def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], node_id: Int): Unit = {
-    context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef + "  , with id: " + node_id)
-    actorRef ! Node.ReceiveSolution(mapping.getSpecificMapping(solution, node_id), context.self)
+  def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], intersection_variables: List[Int]): Unit = {
+    context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef)
+    actorRef ! Node.ReceiveSolution(getSpecificMapping(solution, intersection_variables), context.self)
   }
 
   def receive(final_solution: Solution, index: Int): Behavior[SolutionEvent] = {
@@ -38,6 +38,14 @@ class SolutionNode(val solution: Solution, val mapping: Mapping, val tree_node_c
       }
     }
   }
+
+  //Returns subset of full solution mapping (so to only send the values that are intersecting)
+  def getSpecificMapping(solution: Solution, intersection_variables: List[Int]): Map[Int, String] = {
+    val map: Map[Int, String] = intersection_variables.map(variable_id =>
+      (variable_id -> solution.bareColorMapping()(variable_id))
+    ).toMap
+    map
+  }
 }
 
 object SolutionNode {
@@ -46,15 +54,14 @@ object SolutionNode {
 
   def apply(
              solution: Solution,
-             mapping: Mapping,
              tree_node_children_ids: List[Int],
              parent_ref: ActorRef[NodeSearch.Event],
-             child_refs: Map[Int, ActorRef[Node.Event]]
+             child_refs: Map[ActorRef[Node.Event], List[Int]]
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
-    val node = new SolutionNode(solution, mapping, tree_node_children_ids, parent_ref, context)
+    val node = new SolutionNode(solution, tree_node_children_ids, parent_ref, context)
 //    dont ask my why but if you remove this comment you get an Java String to Integer conversion error
-    child_refs.foreach{ case (key: Int, child_ref: ActorRef[Node.Event]) =>
-      node.sendSolution(solution, child_ref, key)
+    child_refs.foreach{ case (child_ref: ActorRef[Node.Event], mapping: List[Int]) =>
+      node.sendSolution(solution, child_ref, mapping)
     }
     node.receive(solution, 0)
   }

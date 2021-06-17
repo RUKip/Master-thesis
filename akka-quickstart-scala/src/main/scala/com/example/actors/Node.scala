@@ -8,7 +8,7 @@ import com.example.{CborSerializable, TreeNode}
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
 //This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)
-class Node(child_refs: Map[Int, ActorRef[Node.Event]]) {
+class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
 
   def receive(tree_node: TreeNode, solution_id: Int): Behavior[Event] = {
     Behaviors.receive { (context, message) =>
@@ -34,7 +34,7 @@ class Node(child_refs: Map[Int, ActorRef[Node.Event]]) {
           receive(new_node, solution_id+1)
         case Terminate() =>
           context.log.info("Terminating..")
-          child_refs.values foreach { replyTo =>
+          child_refs.keys foreach { replyTo =>
             replyTo ! Terminate()
           }
           Behaviors.stopped
@@ -52,7 +52,7 @@ object Node {
   final case class ReceiveSolution(@JsonDeserialize(keyAs = classOf[Int]) parent_color_mapping: Map[Int, String], from: ActorRef[SolutionEvent]) extends Event
   final case class Terminate() extends Event
 
-  def apply(tree_node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]]): Behavior[Event] = Behaviors.setup { context =>
+  def apply(tree_node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]]): Behavior[Event] = Behaviors.setup { context =>
     val node = new Node(child_refs)
 
     context.log.info("Node " + tree_node.id + " setup, starting to receive")

@@ -8,7 +8,7 @@ import com.example.{Solution, TreeNode}
 import com.example.solver.SolverScalaWrapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
-class NodeSearch (node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], parent_solution_node: ActorRef[SolutionEvent], solutions: List[Map[Int, String]], context: ActorContext[Event]) {
+class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_solution_node: ActorRef[SolutionEvent], solutions: List[Map[Int, String]], context: ActorContext[Event]) {
 
   //For now lets just say we want the most amount of color 'red'
   def calcCost(color_mapping: Map[Int, String]): Int = {
@@ -28,7 +28,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], pa
       val solution_id = node.id.toString + "_" + index
 
       val solution_actor = context.spawn(
-        SolutionNode(Solution(solution_id, node, current_solution, 0), node.child_connected, node.tree_children, context.self, child_refs),
+        SolutionNode(Solution(solution_id, node, current_solution, 0), node.tree_children, context.self, child_refs),
         solution_id
       )
       Behaviors.receive { (context, message) =>
@@ -77,7 +77,7 @@ object NodeSearch {
   final case class PrintGraph() extends Event
   final case class SendOptimalSolution(@JsonDeserialize(keyAs = classOf[Int]) solution: Option[Map[Int, String]]) extends Event
 
-  def apply(node: TreeNode, child_refs: Map[Int, ActorRef[Node.Event]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
+  def apply(node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
     val solutions = SolverScalaWrapper.calcSolutions(node)
     context.log.info("For node " + node.graph_variables + " Solution: {}", solutions)
 
