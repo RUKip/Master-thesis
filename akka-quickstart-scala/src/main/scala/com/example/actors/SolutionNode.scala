@@ -13,11 +13,11 @@ class SolutionNode(val solution: Solution, val tree_node_children_ids: List[Int]
     actorRef ! Node.ReceiveSolution(getSpecificMapping(solution, intersection_variables), context.self)
   }
 
-  def receive(final_solution: Solution, index: Int): Behavior[SolutionEvent] = {
-    var new_final_solution = final_solution
-    if (index == tree_node_children_ids.size) {
-      context.log.info("Done aggregating, sending optimal solution {}", final_solution.bareColorMapping())
-      parent_node ! NodeSearch.SendOptimalSolution(Option(final_solution.bareColorMapping()))
+  def receive(final_solution: Solution, optimal_solutions: List[(Map[Int, String], Int)]): Behavior[SolutionEvent] = {
+    if (optimal_solutions.size == tree_node_children_ids.size) {
+      val new_final_solution = final_solution.aggregateSolution(optimal_solutions)
+      context.log.info("Done aggregating, sending optimal solution {}", new_final_solution.bareColorMapping())
+      parent_node ! NodeSearch.SendOptimalSolution(Option(new_final_solution.bareColorMapping()))
       Behaviors.stopped
     } else {
       Behaviors.receive { (context, message) =>
@@ -28,8 +28,7 @@ class SolutionNode(val solution: Solution, val tree_node_children_ids: List[Int]
               parent_node ! NodeSearch.SendOptimalSolution(None)
               Behaviors.stopped
             } else {
-              new_final_solution = final_solution.aggregateSolution(optimal_solution, score)
-              receive(new_final_solution, index + 1)
+              receive(final_solution, optimal_solutions :+ (optimal_solution, score))
             }
           case _ =>
             context.log.error("Unexpected message: " + message)
@@ -62,7 +61,7 @@ object SolutionNode {
     child_refs.foreach{ case (child_ref: ActorRef[Node.Event], mapping: List[Int]) =>
       node.sendSolution(solution, child_ref, mapping)
     }
-    node.receive(solution, 0)
+    node.receive(solution, List())
   }
 
 }
