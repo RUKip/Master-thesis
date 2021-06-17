@@ -59,7 +59,6 @@ object SolutionNode {
              child_refs: Map[ActorRef[Node.Event], List[Int]]
            ): Behavior[SolutionEvent] = Behaviors.setup { context =>
     val node = new SolutionNode(solution, tree_node_children_ids, parent_ref, context)
-//    dont ask my why but if you remove this comment you get an Java String to Integer conversion error
     child_refs.foreach{ case (child_ref: ActorRef[Node.Event], mapping: List[Int]) =>
       node.sendSolution(solution, child_ref, mapping)
     }
