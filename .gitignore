@@ -1,0 +1,6 @@
+*.class
+*.log
+target/
+.idea/
+akka-quickstart-scala/generated_trees/*
+!akka-quickstart-scala/generated_trees/1_generated_tree.json
