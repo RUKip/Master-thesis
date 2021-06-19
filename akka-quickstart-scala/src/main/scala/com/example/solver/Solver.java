@@ -12,8 +12,23 @@ import java.util.Map;
 
 public class Solver {
 
+    //TODO: The domain (colors) are for now hardcoded,
+    // if you want to make the COP unsolvable remove colors
     //Set of values
-    public static final String[] COLOR_MAPPING = {"red", "blue", "yellow", "Blank"};
+    public static final String[] COLOR_MAPPING = {
+            "red",
+            "blue",
+            "yellow",
+            "green",
+            "white",
+            "black",
+            "orange",
+            "purple",
+            "cyan",
+            "pink",
+            "brown",
+            "Blank"
+    };
 
      public static List<Map<Integer, String>> solve(List<Variable> nodes, Map<Integer, Variable> mapping)
      {

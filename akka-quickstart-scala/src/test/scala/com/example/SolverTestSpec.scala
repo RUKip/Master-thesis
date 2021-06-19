@@ -57,4 +57,11 @@ class SolverTestSpec extends AnyFlatSpec with should.Matchers {
     val solutions2: List[Map[Int, String]] = SolverScalaWrapper.calcSolutions(new_root)
     solutions2 should be (List(Map(4 -> "yellow")))
   }
+
+
+  "Time of running a fully connected problem" should "at least take a couple of seconds" in {
+    val new_mapping = Range(1, 6).map { value => (value -> Variable(value, Range(1,6).toList, "Blank"))}.toMap
+    val testNode = TreeNode(1, 0, List(2, 3), Range(1, 6).toList, new_mapping, Map(2 -> List(3,4), 3 -> List(2)))
+    val solutions2: List[Map[Int, String]] = SolverScalaWrapper.calcSolutions(testNode)
+  }
 }
