@@ -22,12 +22,12 @@ public class Solver {
             "green",
             "white",
             "black",
-            "orange",
-            "purple",
-            "cyan",
-            "pink",
-            "brown",
-            "Blank"
+            "orange"
+//            "purple",
+//            "cyan",
+//            "pink",
+//            "brown",
+//            "Blank"
     };
 
      public static List<Map<Integer, String>> solve(List<Variable> nodes, Map<Integer, Variable> mapping)

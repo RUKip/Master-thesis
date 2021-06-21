@@ -16,7 +16,7 @@ class SolutionNode(val solution: Solution, val tree_node_children_ids: List[Int]
   def receive(final_solution: Solution, optimal_solutions: List[(Map[Int, String], Int)]): Behavior[SolutionEvent] = {
     if (optimal_solutions.size == tree_node_children_ids.size) {
       val new_final_solution = final_solution.aggregateSolution(optimal_solutions)
-      context.log.info("Done aggregating, sending optimal solution {}", new_final_solution.bareColorMapping())
+//      context.log.info("Done aggregating, sending optimal solution {}", new_final_solution.bareColorMapping()) Verbose version
       parent_node ! NodeSearch.SendOptimalSolution(Option(new_final_solution.bareColorMapping()))
       Behaviors.stopped
     } else {

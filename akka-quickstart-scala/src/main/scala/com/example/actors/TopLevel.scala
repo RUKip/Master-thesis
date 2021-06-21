@@ -3,30 +3,19 @@ package com.example.actors
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import akka.cluster.ClusterEvent.{MemberEvent, MemberUp, ReachabilityEvent}
-import akka.cluster.typed.{Cluster, Subscribe}
+import akka.cluster.typed.{Cluster}
 import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 
+import java.time.{Duration, Instant}
 import scala.jdk.CollectionConverters._
 
 class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int) {
 
   def receive(): Behavior[SolutionNode.SolutionEvent] ={
     Behaviors.receiveMessage {
-      case MemberChange(changeEvent) =>
-        changeEvent match {
-          case MemberUp(member) =>
-            context.log.info("Member is Up: {}", member.address)
-            Behaviors.same
-          case _: MemberEvent => Behaviors.same // ignore
-        }
       case CreateNode(id: Int, children: List[(ActorRef[Node.Event], List[Int])], reply_to: ActorRef[SolutionEvent]) =>
         val actor_ref = spawnNode(all_tree_nodes(id), children.toMap, context)
         reply_to ! RegisterNodeRef(id, actor_ref)
@@ -106,6 +95,8 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def startAlgorithm(root_actor: ActorRef[Node.Event]):  Behavior[SolutionNode.SolutionEvent] = {
+    val start_time = Instant.now()
+
     //This part only has to run for one TopLevel in the distributed actorsystem
     context.log.info("Executing from master")
     //Start algorithm
@@ -116,6 +107,9 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
       message match {
         case SendSolution(solution: Map[Int, String], score) =>
           context.log.info("Final solution is: {} {}", solution, score)
+          val finish_time = Instant.now()
+          val duration = Duration.between(start_time, finish_time).toMillis/1000
+          context.log.info("Execution took: {} seconds", duration)
 
           //Terminate all still running tree nodes
           root_actor ! Terminate()
@@ -129,8 +123,6 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 }
 
-private final case class ReachabilityChange(reachabilityEvent: ReachabilityEvent) extends SolutionEvent
-private final case class MemberChange(event: MemberEvent) extends SolutionEvent
 private final case class CreateNode(id: Int, children: List[(ActorRef[Node.Event], List[Int])], reply_to: ActorRef[SolutionEvent]) extends SolutionEvent
 private final case class RegisterNodeRef(id: Int, ref: ActorRef[Node.Event]) extends SolutionEvent
 final case class ListingResponse(listing: Receptionist.Listing) extends SolutionEvent
@@ -156,9 +148,6 @@ object TopLevel {
       if (Cluster(context.system).selfMember.hasRole("master")) {
         context.system.receptionist ! Receptionist.Subscribe(TopLevelServiceKey, listingAdapter)
       }
-
-      val memberEventAdapter: ActorRef[MemberEvent] = context.messageAdapter(MemberChange)
-      Cluster(context.system).subscriptions ! Subscribe(memberEventAdapter, classOf[MemberEvent])
 
       topLevelActor.receive()
   }

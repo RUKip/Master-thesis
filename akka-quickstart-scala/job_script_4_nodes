@@ -1,0 +1,4 @@
+#!/bin/bash
+
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=4

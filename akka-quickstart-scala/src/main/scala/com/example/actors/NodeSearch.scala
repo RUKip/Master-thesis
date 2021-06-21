@@ -10,14 +10,22 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
 class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_solution_node: ActorRef[SolutionEvent], context: ActorContext[Event]) {
 
+  val COLOR_COST_MAPPING = Map(
+    ("red" -> 5),
+    ("blue" -> 4),
+    ("yellow" -> 1),
+    ("green" -> 2),
+    ("white" -> 0),
+    ("black" -> 0),
+    ("orange" -> 2)
+  )
+
   //For now lets just say we want the most amount of color 'red'
   def calcCost(color_mapping: Map[Int, String]): Int = {
     var cost: Int = 0
     color_mapping.foreach {
       case (_, color) =>
-        if (color == "red") {
-          cost += 1
-        }
+        cost += COLOR_COST_MAPPING.getOrElse(color, 0)
     }
     cost
   }
