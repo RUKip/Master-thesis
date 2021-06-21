@@ -31,21 +31,24 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
   }
 
   def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]]): Behavior[Event] = {
+    context.log.error("Iteration: " solutions.size)
     if (solutions.nonEmpty) {
       val solution = solutions.head
-      val current_solution = node.updateNodes(solution).full_graph_mapping
+      val new_node = node.updateNodes(solution)
+      val current_solution = new_node.full_graph_mapping
       val solution_id = node.id.toString + "_" + solutions.size
 
       val solution_actor = context.spawn(
-        SolutionNode(Solution(solution_id, node, current_solution, 0), node.tree_children, context.self, child_refs),
+        SolutionNode(Solution(solution_id, new_node, current_solution, 0), new_node.tree_children, context.self, child_refs),
         solution_id
       )
       Behaviors.receive { (context, message) =>
         message match {
-          case SendOptimalSolution(solution: Option[Map[Int, String]]) =>
-            val cost = this.calcCost(solution.getOrElse(Map()))
-            if (cost > best_score) {
-              mainLoop(context, solution, cost, solutions.tail)
+          case SendOptimalSolution(received_solution: Option[Map[Int, String]]) =>
+            val new_solution: Map[Int, String] = if (received_solution.isEmpty) Map() else received_solution.get
+            val cost = this.calcCost(new_solution)
+            if (cost >= best_score) {
+              mainLoop(context, Option(new_solution), cost, solutions.tail)
             } else {
               mainLoop(context, best_solution, best_score, solutions.tail)
             }
@@ -88,7 +91,7 @@ object NodeSearch {
 
   def apply(node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
     val solutions = SolverScalaWrapper.calcSolutions(node)
-    context.log.info("For node " + node.graph_variables + " Solution: {}", solutions)
+    context.log.info("For variables " + node.graph_variables + " Solution: {}", solutions)
 
     val node_search = new NodeSearch(node, child_refs, parent_solution_node, context)
 
