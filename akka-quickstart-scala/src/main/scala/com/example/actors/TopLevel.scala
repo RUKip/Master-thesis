@@ -3,12 +3,13 @@ package com.example.actors
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import akka.cluster.typed.{Cluster}
+import akka.cluster.typed.Cluster
 import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
 
+import java.io.{BufferedWriter, File, FileWriter}
 import java.time.{Duration, Instant}
 import scala.jdk.CollectionConverters._
 
@@ -110,6 +111,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
           val finish_time = Instant.now()
           val duration = Duration.between(start_time, finish_time).toMillis/1000
           context.log.info("Execution took: {} seconds", duration)
+          writeResults(solution, score, duration)
 
           //Terminate all still running tree nodes
           root_actor ! Terminate()
@@ -120,6 +122,13 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
           Behaviors.stopped
       }
     }
+  }
+
+  def writeResults(solution: Map[Int, String], score: Int, time: Long): Unit = {
+    val file = new File("last_result.txt")
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write("Duration: " + time + ", score: " + score + ", Solution: " + solution.toString())
+    bw.close()
   }
 }
 

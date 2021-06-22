@@ -31,7 +31,6 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
   }
 
   def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]]): Behavior[Event] = {
-    context.log.error("Iteration: " solutions.size)
     if (solutions.nonEmpty) {
       val solution = solutions.head
       val new_node = node.updateNodes(solution)

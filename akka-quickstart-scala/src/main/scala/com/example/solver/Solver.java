@@ -21,7 +21,7 @@ public class Solver {
             "yellow",
             "green",
             "white",
-//            "black",
+            "black",
             "orange"
 //            "purple",
 //            "cyan",
