@@ -13,14 +13,14 @@ import java.util.Map;
 public class Solver {
 
     //TODO: The domain (colors) are for now hardcoded,
-    // if you want to make the COP unsolvable remove colors
+    // 4 colors is pretty fast, 5 colors already takes minutes and 6 colors is disadviced
     //Set of values
     public static final String[] COLOR_MAPPING = {
             "red",
             "blue",
             "yellow",
             "green",
-//            "white",
+            "white",
 //            "black",
 //            "orange",
 //            "purple",
