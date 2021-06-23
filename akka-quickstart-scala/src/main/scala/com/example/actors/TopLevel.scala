@@ -32,6 +32,8 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
         } else {
           Behaviors.same
         }
+      case StopTopLevel() =>
+       Behaviors.stopped
     }
   }
 
@@ -54,7 +56,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
         context.log.info("Registering new ref: {} with id {}", ref, id)
         storedActorReferences += (id -> ref)
         if (storedActorReferences.size == all_tree_nodes.size) {
-          startAlgorithm(storedActorReferences(1))
+          startAlgorithm(storedActorReferences(1), topLevelActors)
         } else if (depth == nodes.size) {
           context.log.info("Dividing next level of nodes")
           val next_parent_nodes = nodes.map { node =>
@@ -95,7 +97,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }.toMap
   }
 
-  def startAlgorithm(root_actor: ActorRef[Node.Event]):  Behavior[SolutionNode.SolutionEvent] = {
+  def startAlgorithm(root_actor: ActorRef[Node.Event], topLevelActors: Set[ActorRef[SolutionEvent]]):  Behavior[SolutionNode.SolutionEvent] = {
     val start_time = Instant.now()
 
     //This part only has to run for one TopLevel in the distributed actorsystem
@@ -115,6 +117,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
 
           //Terminate all still running tree nodes
           root_actor ! Terminate()
+          topLevelActors.foreach(toplevelActor => toplevelActor ! StopTopLevel())
 
           Behaviors.stopped
         case _ =>
@@ -134,6 +137,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
 
 private final case class CreateNode(id: Int, children: List[(ActorRef[Node.Event], List[Int])], reply_to: ActorRef[SolutionEvent]) extends SolutionEvent
 private final case class RegisterNodeRef(id: Int, ref: ActorRef[Node.Event]) extends SolutionEvent
+private final case class StopTopLevel() extends SolutionEvent
 final case class ListingResponse(listing: Receptionist.Listing) extends SolutionEvent
 
 object TopLevel {

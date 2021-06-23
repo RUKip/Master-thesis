@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 //This node should be representing a node in the Hypertree decomposition (else could not be solved nicely in parallel)
 class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
 
-  def receive(tree_node: TreeNode, solution_id: Int): Behavior[Event] = {
+  def receive(tree_node: TreeNode, solution_id: Int, recorded_goods: Map[List[Int], Int], recorded_no_goods: Map[List[Int], Boolean]): Behavior[Event] = {
     Behaviors.receive { (context, message) =>
       message match {
         //This is a testing behaviour
@@ -31,7 +31,7 @@ class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
             NodeSearch(new_node, child_refs, context.self, solution_node),
             solution_id.toString
           )
-          receive(new_node, solution_id+1)
+          receive(new_node, solution_id+1, recorded_goods, recorded_no_goods)
         case Terminate() =>
           context.log.info("Terminating..")
           child_refs.keys foreach { replyTo =>
@@ -56,6 +56,6 @@ object Node {
     val node = new Node(child_refs)
 
     context.log.info("Node " + tree_node.id + " setup, starting to receive")
-    node.receive(tree_node, 0)
+    node.receive(tree_node, 0, Map(), Map())
   }
 }

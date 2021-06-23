@@ -1,4 +1,9 @@
 #!/bin/bash
 
+#SBATCH --job-name=actor_job
 #SBATCH --nodes=4
-#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks-per-node=1
+
+hostname = %HOSTNAME%
+
+sbtach java

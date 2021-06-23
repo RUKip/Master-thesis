@@ -20,14 +20,14 @@ public class Solver {
             "blue",
             "yellow",
             "green",
-            "white",
-            "black",
-            "orange"
+//            "white",
+//            "black",
+//            "orange",
 //            "purple",
 //            "cyan",
 //            "pink",
 //            "brown",
-//            "Blank"
+            "Blank"
     };
 
      public static List<Map<Integer, String>> solve(List<Variable> nodes, Map<Integer, Variable> mapping)
@@ -50,8 +50,6 @@ public class Solver {
                 //Create constraints for already set colors
                 for (Integer id : node.connectedAsJava()) {
                     Variable connected_node = mapping.get(id);
-//                    System.out.println("ID: " + id);
-//                    System.out.println("Connected node: " + connected_node);
 
                     if ( ! connected_node.color().equals("Blank")) {
                         model.arithm(node_color, "!=", color_options.get(connected_node.color())).post();
@@ -69,11 +67,6 @@ public class Solver {
          for (Solution solution : solutions) {
              color_mapped_solutions.add(solutionToColorMapping(solution));
          }
-
-//         //Below is debug, to see what is the solution
-//        if( ! solutions.isEmpty()){
-//            System.out.println(solutions.toString());
-//        }
 
         return color_mapped_solutions;
      }
