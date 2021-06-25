@@ -14,7 +14,7 @@ object Generator extends App {
   @tailrec
   def createTree(id: Int): Unit = {
     println("Trying to generate...")
-    val base = InitializationHelper.init(5, 5, 5)
+    val base = InitializationHelper.init(5, 6, 7)
     if (base.nonEmpty) {
       if (base.size < threshold) {
         createTree(id)

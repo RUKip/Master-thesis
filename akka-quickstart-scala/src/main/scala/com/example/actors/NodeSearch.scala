@@ -8,7 +8,7 @@ import com.example.{Solution, TreeNode}
 import com.example.solver.SolverScalaWrapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
-class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_solution_node: ActorRef[SolutionEvent], context: ActorContext[Event]) {
+class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_solution_node: ActorRef[SolutionEvent], context: ActorContext[Event], parent_node: ActorRef[Node.Event]) {
 
   val COLOR_COST_MAPPING = Map(
     ("red" -> 5),
@@ -30,7 +30,6 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     cost
   }
 
-  //TODO: after this finsihes recorded no good and good need to be synced with tree node, saving more time
   def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]], recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_no_goods: Map[List[(Int, String)], Boolean]): Behavior[Event] = {
     if (solutions.nonEmpty) {
       val solution: Map[Int, String] = solutions.head
@@ -51,7 +50,6 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
           if (best_score >= recorded_cost) {
             mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, recorded_no_goods)
           } else {
-            context.log.info("Do i actually get here!!?, could be when sharing between search nodes")
             mainLoop(context, Option(new_recorded_solution), new_recorded_cost, solutions.tail, new_recorded_goods, recorded_no_goods)
           }
         } else {
@@ -64,7 +62,6 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
               case SendOptimalSolution(received_solution: Option[Map[Int, String]]) =>
                 val new_solution: Map[Int, String] = if (received_solution.isEmpty) Map() else received_solution.get
                 val cost = this.calcCost(new_solution)
-                //context.log.error("Received solution: .... {} with cost {} ", received_solution, cost)
 
                 val new_recorded_goods = if (received_solution.isEmpty) recorded_goods else recorded_goods + recordGood(solution, new_solution, cost)
                 val new_recorded_no_goods = if (received_solution.isEmpty) recorded_no_goods + recordNoGood(solution) else recorded_no_goods
@@ -93,6 +90,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
       }
     } else {
       context.log.info("Found local best solution: {}, score: {}, stopping...", best_solution, best_score)
+      parent_node ! Node.SendRecording(recorded_goods, recorded_no_goods)
       if (best_solution.isEmpty) {
         parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
       } else {
@@ -102,16 +100,15 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     }
   }
 
-  def receiveNodeRef(solutions: List[Map[Int, String]]): Behavior[Event] = {
+  def receiveNodeRef(solutions: List[Map[Int, String]],  recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_no_goods: Map[List[(Int, String)], Boolean]): Behavior[Event] = {
     context.log.info("Node search ready to receive for node: " + node.id.toString)
-    mainLoop(context, None, 0, solutions, Map(), Map())
+    mainLoop(context, None, 0, solutions, recorded_goods, recorded_no_goods)
   }
 
   //Below stuff for (no)good recording
 
   def recordGood(send_solution: Map[Int, String], received_solution: Map[Int, String], received_cost: Int): (List[(Int, String)], (Int, Map[Int, String])) = {
     val recording = getRecording(send_solution)
-    context.log.error("Recording: {}, with cost: {}", recording, received_cost)
     (recording, (received_cost, received_solution))
   }
 
@@ -156,18 +153,18 @@ object NodeSearch {
   final case class PrintGraph() extends Event
   final case class SendOptimalSolution(@JsonDeserialize(keyAs = classOf[Int]) solution: Option[Map[Int, String]]) extends Event
 
-  def apply(node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent]): Behavior[Event] = Behaviors.setup { context =>
+  def apply(node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent],  recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_no_goods: Map[List[(Int, String)], Boolean]): Behavior[Event] = Behaviors.setup { context =>
     val solutions = SolverScalaWrapper.calcSolutions(node)
     context.log.info("For variables " + node.graph_variables + " Solution: {}", solutions)
 
-    val node_search = new NodeSearch(node, child_refs, parent_solution_node, context)
+    val node_search = new NodeSearch(node, child_refs, parent_solution_node, context, parent_node)
 
     if(solutions.isEmpty) {
       context.log.info("No solutions, stopping")
       parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
       Behaviors.stopped
     } else {
-      node_search.receiveNodeRef(solutions)
+      node_search.receiveNodeRef(solutions, recorded_goods, recorded_no_goods)
     }
   }
 }
