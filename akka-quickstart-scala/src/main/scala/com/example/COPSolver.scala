@@ -12,6 +12,8 @@ object COPSolver extends App {
 //    //Calculate graph tree-decomposition
 //    val (root_node, tree_decomposition): (TreeNode, Map[Int, TreeNode]) = InitializationHelper.getHTD(graph)
 
+    //val hostname: String = System.getProperty("hostname")
+
     val base = InitializationHelper.loadTree("generated_trees/1_generated_tree.json")
     val tree_decomposition = InitializationHelper.createUsableTree(base)
 
