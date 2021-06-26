@@ -4,7 +4,7 @@ import akka.actor.typed.ActorSystem
 import com.example.actors.{NodeSearch, TopLevel}
 import com.typesafe.config.ConfigFactory
 
-object COPSolver extends App {
+object Main extends App {
 //
 //    //Init graph and tree
 //    val graph: Map[Int, Variable] = InitializationHelper.initAGraph()
