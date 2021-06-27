@@ -8,9 +8,12 @@ import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
+import scala.collection.mutable.PriorityQueue
+
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.time.{Duration, Instant}
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int) {
@@ -28,7 +31,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
             case (id, node) =>
               node.tree_children.isEmpty
           }
-          buildNodeStructure(leaf_nodes, listings)
+          buildNodeStructureRandom(leaf_nodes, listings)
         } else {
           Behaviors.same
         }
@@ -37,7 +40,8 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }
   }
 
-  def buildNodeStructure(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
+  /** Deployment algorithm that decides node division */
+  def buildNodeStructureRandom(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
     var actor_nodes = topLevelActors.iterator
     nodes.foreach { case (id: Int, node: TreeNode) =>
       if ( ! actor_nodes.hasNext) {
@@ -46,6 +50,38 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
       val actor_node = actor_nodes.next
       spawnAndRegister(node, actor_node, context)
     }
+    listenForRegister(nodes, topLevelActors, 1)
+  }
+
+  //TODO: test
+  def buildNodeStructureWeight(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
+    val weighted_map: Map[Int, (Int, TreeNode)] = nodes.map { case (key: Int, value: TreeNode) =>
+      (key -> (calculateWeight(value, nodes, 1), value))
+    }
+
+    val actors = mutable.PriorityQueue.empty[(Int, ActorRef[SolutionEvent])](
+      implicitly[Ordering[(Int, ActorRef[SolutionEvent])]].reverse
+    )
+
+    topLevelActors.foreach { actor => actors.enqueue((0, actor))}
+    weighted_map.foreach { case (key, (weight, node)) =>
+      val next_actor = actors.dequeue()
+      actors.enqueue((next_actor._1 + weight, next_actor._2))
+      spawnAndRegister(node, next_actor._2, context)
+    }
+    listenForRegister(nodes, topLevelActors, 1)
+  }
+
+  def calculateWeight(node: TreeNode, nodes: Map[Int, TreeNode], weight: Int): Int = {
+    if (0 != node.parent) {
+      calculateWeight(nodes(node.parent), nodes, weight+1)
+    } else {
+      weight
+    }
+  }
+
+  def buildNodeStructureBranch(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
+    //TODO: implement
     listenForRegister(nodes, topLevelActors, 1)
   }
 
@@ -67,7 +103,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
             case (id, node) => (! storedActorReferences.contains(id)) && node.tree_children.forall(child => storedActorReferences.contains(child))
           }
           context.log.info("Next level nodes are: {}", next_level_nodes.keys)
-          buildNodeStructure(next_level_nodes, topLevelActors)
+          buildNodeStructureRandom(next_level_nodes, topLevelActors)
         } else {
           listenForRegister(nodes, topLevelActors, depth+1)
         }
