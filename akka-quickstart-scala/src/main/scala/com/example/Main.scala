@@ -19,7 +19,7 @@ object Main extends App {
       val tree_decomposition = InitializationHelper.createUsableTree(base)
 
       val hostname = System.getProperty("hostname")
-      val current_hostname = exec("hostname")
+      val current_hostname = sys.env("hostname")
 
       if (hostname == current_hostname) {
         startup("master", 25252, tree_decomposition)
