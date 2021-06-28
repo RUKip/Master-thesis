@@ -108,7 +108,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   def getBranch(nodes: Map[Int, TreeNode], current_node: TreeNode, branch: Map[Int, TreeNode]): Map[Int, TreeNode] = {
       if (nodes.contains(current_node.parent)) {
         val new_node = nodes(current_node.parent)
-        getBranch(nodes, new_node, branch ++ (current_node.parent -> new_node))
+        getBranch(nodes, new_node, branch + (current_node.parent -> new_node))
       } else {
         branch
       }
