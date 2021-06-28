@@ -22,9 +22,9 @@ object Main extends App {
       val current_hostname = exec("hostname")
 
       if (hostname == current_hostname) {
-        startup("master", 25251, tree_decomposition)
+        startup("master", 25252, tree_decomposition)
       } else {
-        startup("worker", 25251, tree_decomposition)
+        startup("worker", 25252, tree_decomposition)
       }
 
       //Divide here the nodes over the cluster based on tree-decomposition
