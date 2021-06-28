@@ -140,7 +140,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def spawnAndRegister(tree_node: TreeNode, topLevelActor: ActorRef[SolutionEvent], context: ActorContext[SolutionEvent]): Unit = {
-    context.log.info("Creating node with id: {} and childeren {} at {}", tree_node.id, tree_node.tree_children, topLevelActor)
+    //context.log.info("Creating node with id: {} and childeren {} at {}", tree_node.id, tree_node.tree_children, topLevelActor)
     if (context.self == topLevelActor) {
       val actor_ref = spawnNode(all_tree_nodes(tree_node.id), matchToActorRef(tree_node.id, tree_node.tree_children), context)
       context.self ! RegisterNodeRef(tree_node.id, actor_ref)
@@ -150,7 +150,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def spawnNode(tree_node: TreeNode, children: Map[ActorRef[Node.Event], List[Int]], context: ActorContext[SolutionEvent]): ActorRef[Node.Event] = {
-    context.log.info("Spawning actor for tree_node: " + tree_node.id.toString)
+    //context.log.info("Spawning actor for tree_node: " + tree_node.id.toString)
     context.spawn(Node(tree_node, children), tree_node.id.toString)
   }
 
@@ -166,7 +166,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     val start_time = Instant.now()
 
     //This part only has to run for one TopLevel in the distributed actorsystem
-    context.log.info("Executing from master")
+    //context.log.info("Executing from master")
     //Start algorithm
     root_actor ! ReceiveSolution(Map(): Map[Int, String], context.self)
 
@@ -174,10 +174,10 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     Behaviors.receive { (ctx, message) =>
       message match {
         case SendSolution(solution: Map[Int, String], score) =>
-          context.log.info("Final solution is: {} {}", solution, score)
+          //context.log.info("Final solution is: {} {}", solution, score)
           val finish_time = Instant.now()
           val duration = Duration.between(start_time, finish_time).toMillis/1000
-          context.log.info("Execution took: {} seconds", duration)
+          //context.log.info("Execution took: {} seconds", duration)
           writeResults(solution, score, duration)
 
           //Terminate all still running tree nodes
@@ -213,7 +213,7 @@ object TopLevel {
   def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int): Behavior[SolutionNode.SolutionEvent] =
     Behaviors.setup[SolutionNode.SolutionEvent] { context =>
 
-      context.log.info("starting toplevel actor")
+      //context.log.info("starting toplevel actor")
 
       val listingAdapter: ActorRef[Receptionist.Listing] =
         context.messageAdapter { listing => ListingResponse(listing)}

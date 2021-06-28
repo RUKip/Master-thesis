@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 class SolutionNode(val solution: Solution, val tree_node_children_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val context: ActorContext[SolutionEvent]) {
 
   def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], intersection_variables: List[Int]): Unit = {
-    context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef)
+    //context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef)
     actorRef ! Node.ReceiveSolution(getSpecificMapping(solution.bareColorMapping(), intersection_variables), context.self)
   }
 

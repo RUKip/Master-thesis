@@ -39,13 +39,13 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
 
       if (hasRecordedNoGood(recorded_no_goods, solution)) {
         //Solution is in recorded no good, so skip
-        context.log.info("No good found for: {}", solution)
+        //context.log.info("No good found for: {}", solution)
         mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
       } else {
         val (recorded_cost, recording) = hasRecordedGood(recorded_goods, solution)
         if (recorded_cost >= 0) {
           val (new_recorded_cost, new_recorded_solution, new_recorded_goods) = compareLocalGood(solution, recording, recorded_cost, recorded_goods)
-          context.log.info("Good found for: {} with cost: {}", solution, recorded_cost)
+          //context.log.info("Good found for: {} with cost: {}", solution, recorded_cost)
 
           if (best_score >= recorded_cost) {
             mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, recorded_no_goods)
@@ -89,7 +89,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
         }
       }
     } else {
-      context.log.info("Found local best solution: {}, score: {}, stopping...", best_solution, best_score)
+      //context.log.info("Found local best solution: {}, score: {}, stopping...", best_solution, best_score)
       parent_node ! Node.SendRecording(recorded_goods, recorded_no_goods)
       if (best_solution.isEmpty) {
         parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
@@ -101,7 +101,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
   }
 
   def receiveNodeRef(solutions: List[Map[Int, String]],  recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_no_goods: Map[List[(Int, String)], Boolean]): Behavior[Event] = {
-    context.log.info("Node search ready to receive for node: " + node.id.toString)
+    //context.log.info("Node search ready to receive for node: " + node.id.toString)
     mainLoop(context, None, 0, solutions, recorded_goods, recorded_no_goods)
   }
 
@@ -155,12 +155,12 @@ object NodeSearch {
 
   def apply(node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_node: ActorRef[Node.Event], parent_solution_node: ActorRef[SolutionEvent],  recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_no_goods: Map[List[(Int, String)], Boolean]): Behavior[Event] = Behaviors.setup { context =>
     val solutions = SolverScalaWrapper.calcSolutions(node)
-    context.log.info("For variables " + node.graph_variables + " Solution: {}", solutions)
+    //context.log.info("For variables " + node.graph_variables + " Solution: {}", solutions)
 
     val node_search = new NodeSearch(node, child_refs, parent_solution_node, context, parent_node)
 
     if(solutions.isEmpty) {
-      context.log.info("No solutions, stopping")
+      //context.log.info("No solutions, stopping")
       parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
       Behaviors.stopped
     } else {

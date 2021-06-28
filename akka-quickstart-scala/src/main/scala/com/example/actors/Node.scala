@@ -25,7 +25,7 @@ class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
           )
           Behaviors.same
         case ReceiveSolution(parent_color_mapping: Map[Int, String], solution_node: ActorRef[SolutionEvent]) =>
-          context.log.info("Node received solution: " + parent_color_mapping.toString() + " from solution node: " + solution_node.path.toString)
+          //context.log.info("Node received solution: " + parent_color_mapping.toString() + " from solution node: " + solution_node.path.toString)
           val new_node : TreeNode = tree_node.updateNodes(parent_color_mapping)
           context.spawn(
             NodeSearch(new_node, child_refs, context.self, solution_node, all_recorded_goods, all_recorded_no_goods),
@@ -35,7 +35,7 @@ class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
         case SendRecording(recorded_goods, recorded_no_goods) =>
           receive(tree_node, solution_id, mergeRecordedGoods(all_recorded_goods, recorded_goods), all_recorded_no_goods ++ recorded_no_goods)
         case Terminate() =>
-          context.log.info("Terminating..")
+          //context.log.info("Terminating..")
           child_refs.keys foreach { replyTo =>
             replyTo ! Terminate()
           }
@@ -74,7 +74,7 @@ object Node {
   def apply(tree_node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]]): Behavior[Event] = Behaviors.setup { context =>
     val node = new Node(child_refs)
 
-    context.log.info("Node " + tree_node.id + " setup, starting to receive")
+    //context.log.info("Node " + tree_node.id + " setup, starting to receive")
     node.receive(tree_node, 0, Map(), Map())
   }
 }
