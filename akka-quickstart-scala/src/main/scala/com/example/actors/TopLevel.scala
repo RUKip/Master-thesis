@@ -8,8 +8,6 @@ import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
-import scala.collection.mutable.PriorityQueue
-
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.time.{Duration, Instant}
@@ -81,8 +79,39 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def buildNodeStructureBranch(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-    //TODO: implement
+    //TODO: test
+    var new_nodes: Map[Int, TreeNode] = nodes
+    val all_nodes = nodes.values
+    val leaf_nodes = all_nodes.filter { node => node.tree_children.isEmpty }
+
+    val nodes_per_actor = (leaf_nodes.size + topLevelActors.size - 1) / topLevelActors.size
+
+    val leaf_per_actor = leaf_nodes.grouped(nodes_per_actor)
+
+    val branches_per_actor = topLevelActors.zip(
+      leaf_per_actor.flatMap { leaves =>
+        leaves.map { leaf =>
+          val branch = getBranch(new_nodes, leaf, Map(leaf.id -> leaf))
+          new_nodes = nodes.toSet.diff(branch.toSet).toMap
+          branch
+        }
+      }
+    )
+
+    branches_per_actor.foreach { case (actor: ActorRef[SolutionEvent], branch: Map[Int, TreeNode]) =>
+      branch.foreach(node => spawnAndRegister(node._2, actor, context))
+    }
+
     listenForRegister(nodes, topLevelActors, 1)
+  }
+
+  def getBranch(nodes: Map[Int, TreeNode], current_node: TreeNode, branch: Map[Int, TreeNode]): Map[Int, TreeNode] = {
+      if (nodes.contains(current_node.parent)) {
+        val new_node = nodes(current_node.parent)
+        getBranch(nodes, new_node, branch ++ (current_node.parent -> new_node))
+      } else {
+        branch
+      }
   }
 
   //For every created node the master expects a register (Master only function)
