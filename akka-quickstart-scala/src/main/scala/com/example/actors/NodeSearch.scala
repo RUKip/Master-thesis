@@ -4,7 +4,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.example.actors.NodeSearch.{Event, PrintGraph, SendOptimalSolution}
 import com.example.actors.SolutionNode.SolutionEvent
-import com.example.{Solution, TreeNode}
+import com.example.{RecordedGoods, RecordedNoGoods, Solution, TreeNode}
 import com.example.solver.SolverScalaWrapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
@@ -30,21 +30,21 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     score
   }
 
-  def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]], recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_no_goods: Map[List[(Int, String)], Boolean]): Behavior[Event] = {
+  def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]], recorded_goods: RecordedGoods, recorded_no_goods: RecordedNoGoods): Behavior[Event] = {
     if (solutions.nonEmpty) {
       val solution: Map[Int, String] = solutions.head
       val new_node: TreeNode = node.updateNodes(solution)
       val applicable_solution = new_node.graph_variables.map(id =>(id -> new_node.full_graph_mapping(id))).toMap
       val solution_id = node.id.toString + "_" + solutions.size
 
-      if (hasRecordedNoGood(recorded_no_goods, solution)) {
+      if (recorded_no_goods.hasRecordedNoGood(solution)) {
         //Solution is in recorded no good, so skip
         //context.log.info("No good found for: {}", solution)
         mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
       } else {
-        val (recorded_score, recording) = hasRecordedGood(recorded_goods, solution)
+        val (recorded_score, recording) = recorded_goods.hasRecordedGood(solution)
         if (recorded_score >= 0) {
-          val (new_recorded_score, new_recorded_solution, new_recorded_goods) = compareLocalGood(solution, recording, recorded_score, recorded_goods)
+          val (new_recorded_score, new_recorded_solution, new_recorded_goods) = recorded_goods.compareLocalGood(solution, recording, recorded_score, calcScore)
           //context.log.info("Good found for: {} with score: {}", solution, recorded_score)
 
           if (best_score >= recorded_score) {
@@ -63,8 +63,8 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
                 val new_solution: Map[Int, String] = if (received_solution.isEmpty) Map() else received_solution.get
                 val score = this.calcScore(new_solution)
 
-                val new_recorded_goods = if (received_solution.isEmpty) recorded_goods else recorded_goods + recordGood(solution, new_solution, score)
-                val new_recorded_no_goods = if (received_solution.isEmpty) recorded_no_goods + recordNoGood(solution) else recorded_no_goods
+                val new_recorded_goods = if (received_solution.isEmpty) recorded_goods else recorded_goods.recordGood(solution, new_solution, score)
+                val new_recorded_no_goods = if (received_solution.isEmpty) recorded_no_goods.recordNoGood(solution) else recorded_no_goods
 
                 if (score >= best_score) {
                   mainLoop(context, Option(new_solution), score, solutions.tail, new_recorded_goods, new_recorded_no_goods)
@@ -90,7 +90,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
       }
     } else {
       //context.log.info("Found local best solution: {}, score: {}, stopping...", best_solution, best_score)
-      parent_node ! Node.SendRecording(recorded_goods, recorded_no_goods)
+      parent_node ! Node.SendRecording(recorded_goods.asBasic(), recorded_no_goods.asBasic())
       if (best_solution.isEmpty) {
         parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
       } else {
@@ -100,52 +100,11 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     }
   }
 
-  def receiveNodeRef(solutions: List[Map[Int, String]],  recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_no_goods: Map[List[(Int, String)], Boolean]): Behavior[Event] = {
+  def receiveNodeRef(solutions: List[Map[Int, String]],  recorded_goods: RecordedGoods, recorded_no_goods: RecordedNoGoods): Behavior[Event] = {
     //context.log.info("Node search ready to receive for node: " + node.id.toString)
     mainLoop(context, None, 0, solutions, recorded_goods, recorded_no_goods)
   }
 
-  //Below stuff for (no)good recording
-
-  def recordGood(send_solution: Map[Int, String], received_solution: Map[Int, String], received_score: Int): (List[(Int, String)], (Int, Map[Int, String])) = {
-    val recording = getRecording(send_solution)
-    (recording, (received_score, received_solution))
-  }
-
-  def recordNoGood(send_solution: Map[Int, String]): (List[(Int, String)], Boolean) = {
-    val recording = getRecording(send_solution)
-    (recording, false)
-  }
-
-  /** Gets recording, eg. the variables and there assignment that overlap with child node and the optimal solution */
-  def getRecording(send_solution: Map[Int, String]): List[(Int, String)] =  {
-    val intersecting_variables = child_refs.values.flatten.toList.distinct.sorted
-    intersecting_variables.map { variable =>
-      (variable -> send_solution(variable))
-    }
-  }
-
-  /** returns -1 if not found else the score */
-  def hasRecordedGood(goods: Map[List[(Int, String)], (Int, Map[Int, String])], solution: Map[Int, String]): (Int, Map[Int, String]) = {
-    val recording = getRecording(solution)
-    goods.getOrElse(recording, (-1, Map()))
-  }
-
-  def hasRecordedNoGood(no_goods: Map[List[(Int, String)], Boolean], solution: Map[Int, String]): Boolean = {
-    val recording = getRecording(solution)
-    no_goods.contains(recording)
-  }
-
-  /** For comparing local good vs new good */
-  def compareLocalGood(solution: Map[Int, String], recording: Map[Int, String], recorded_score: Int, recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])]): (Int, Map[Int, String], Map[List[(Int, String)], (Int, Map[Int, String])]) = {
-    val local_solution = recording ++ solution
-    val local_score = calcScore(local_solution)
-    if (local_score > recorded_score) {
-      (local_score, local_solution, recorded_goods + recordGood(solution, local_solution, local_score))
-    } else {
-      (recorded_score, recording, recorded_goods)
-    }
-  }
 }
 
 object NodeSearch {
@@ -164,7 +123,7 @@ object NodeSearch {
       parent_solution_node ! SolutionNode.SendSolution(Map(), 0)
       Behaviors.stopped
     } else {
-      node_search.receiveNodeRef(solutions, recorded_goods, recorded_no_goods)
+      node_search.receiveNodeRef(solutions, RecordedGoods(recorded_goods, child_refs), RecordedNoGoods(recorded_no_goods, child_refs))
     }
   }
 }

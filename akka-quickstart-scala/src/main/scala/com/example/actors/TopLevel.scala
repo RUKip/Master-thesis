@@ -7,7 +7,7 @@ import akka.cluster.typed.Cluster
 import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
-import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
+import com.example.actors.TopLevel.{topLevelServiceKey, storedActorReferences}
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.time.format.{DateTimeFormatter, FormatStyle}
@@ -24,7 +24,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
         val actor_ref = spawnNode(all_tree_nodes(id), children.toMap, context)
         reply_to ! RegisterNodeRef(id, actor_ref)
         Behaviors.same
-      case ListingResponse(TopLevelServiceKey.Listing(listings)) =>
+      case ListingResponse(topLevelServiceKey.Listing(listings)) =>
         //This should be only called by master as the master is only subscribed to these events
         if (listings.size == nr_of_cluster_nodes) {
           val leaf_nodes = all_tree_nodes.filter {
@@ -218,7 +218,7 @@ final case class ListingResponse(listing: Receptionist.Listing) extends Solution
 
 object TopLevel {
 
-  val TopLevelServiceKey: ServiceKey[SolutionEvent] = ServiceKey[SolutionEvent]("TopLevel")
+  val topLevelServiceKey: ServiceKey[SolutionEvent] = ServiceKey[SolutionEvent]("TopLevel")
   var storedActorReferences: Map[Int, ActorRef[Node.Event]] = Map()
 
   def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int): Behavior[SolutionNode.SolutionEvent] =
@@ -230,12 +230,12 @@ object TopLevel {
         context.messageAdapter { listing => ListingResponse(listing)}
 
       context.system.receptionist ! Receptionist
-        .Register(TopLevelServiceKey, context.self)
+        .Register(topLevelServiceKey, context.self)
 
       val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes)
 
       if (Cluster(context.system).selfMember.hasRole("master")) {
-        context.system.receptionist ! Receptionist.Subscribe(TopLevelServiceKey, listingAdapter)
+        context.system.receptionist ! Receptionist.Subscribe(topLevelServiceKey, listingAdapter)
       }
 
       topLevelActor.receive()
