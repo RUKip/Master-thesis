@@ -22,9 +22,12 @@ object Main extends App {
       val hostname = System.getProperty("hostname")
       val current_hostname = InetAddress.getLocalHost.getHostAddress
 
+      println(hostname + " == " + current_hostname)
       if (hostname == current_hostname) {
+        println("I am a master")
         startup("master", 25252, tree_decomposition)
       } else {
+        println("I am a worker")
         startup("worker", 25252, tree_decomposition)
       }
 
