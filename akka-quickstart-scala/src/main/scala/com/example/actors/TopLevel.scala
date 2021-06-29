@@ -10,7 +10,9 @@ import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
 
 import java.io.{BufferedWriter, File, FileWriter}
-import java.time.{Duration, Instant}
+import java.time.format.{DateTimeFormatter, FormatStyle}
+import java.time.{Duration, Instant, ZoneId}
+import java.util.Locale
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
@@ -193,9 +195,18 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def writeResults(solution: Map[Int, String], score: Int, time: Long): Unit = {
-    val file = new File("last_result.txt")
+    val time_stamp = Instant.now()
+    val formatter: DateTimeFormatter =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd_hh-mm-ss")
+        .withLocale( Locale.UK )
+        .withZone( ZoneId.systemDefault() )
+    val file = new File("last_result_" + formatter.format(time_stamp) + ".txt")
     val bw = new BufferedWriter(new FileWriter(file))
-    bw.write("Duration: " + time + ", score: " + score + ", Solution: " + solution.toString())
+    bw.write("Duration: " + time
+      + ", score: " + score
+      + ", Nr of cluster nodes: " + nr_of_cluster_nodes
+      + ", Solution: " + solution.toString()
+    )
     bw.close()
   }
 }
