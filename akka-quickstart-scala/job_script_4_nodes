@@ -10,4 +10,4 @@
 
 hostname = %HOSTNAME%
 
-sbtach java -jar -Dakka.cluster.seed-nodes.0="akka.tcp://COPSolver@${hostname}:2552" -Dnodes=4 -Dhostname=hostname cop-solver-assembly-1.0.jar
+srun java -jar -Dakka.cluster.seed-nodes.0="akka.tcp://COPSolver@${hostname}:2552" -Dnodes=4 -Dhostname=hostname cop-solver-assembly-1.0.jar
