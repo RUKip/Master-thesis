@@ -14,6 +14,8 @@ object InitializationHelper {
 
   implicit val formats = net.liftweb.json.DefaultFormats
 
+  var highest_id = 0
+
   /* Graph structure like:
         1
         |
@@ -82,6 +84,47 @@ object InitializationHelper {
       }
     }
     children
+  }
+
+  def getId: Int = {
+    highest_id += 1
+    highest_id
+  }
+
+  def init(max_children: Int = 3, width: Int = 5, max_depth: Int = 7): Seq[(Int, BaseTreeNode)] = {
+    highest_id = 0
+    if (width > 9) {
+      println("Invalid width, max width cannot be higher then 9")
+      Seq()
+    } else {
+      val id = getId
+      val root = (id, BaseTreeNode(id, 0, Range(1, 5).toList))
+      make(1, Seq(root._2), max_children, width, max_depth) :+ root
+    }
+  }
+
+  def make(depth: Int, parents: Seq[BaseTreeNode], max_children: Int, width: Int, max_depth: Int): Seq[(Int, BaseTreeNode)] = {
+    if (max_depth > depth) {
+      parents.flatMap { parent =>
+        val children = Random.nextInt(max_children)
+        val treeNodes = Range(0, children).map { _ =>
+          val id: Int = getId
+          val treeNode = createTreeNode(id, parent, width)
+          treeNode
+        }
+        treeNodes ++ make(depth + 1, treeNodes.map(value => value._2), max_children, width, max_depth)
+      }
+    } else {
+      Seq()
+    }
+  }
+
+  //Width cannot be higher then 9! else variables (id: 31, nr: 2, 312) and (id: 3, nr: 12, 312) clash
+  def createTreeNode(id: Int, parent: BaseTreeNode, width: Int): (Int, BaseTreeNode) = {
+    val overlap = math.min(Random.nextInt(Math.max(parent.variables.size - 1, 1)) + 1, parent.variables.size - 1)
+    val overlapped_variables = Random.shuffle(parent.variables).take(overlap)
+    val values = overlapped_variables ++ Range(1, Random.nextInt(width - overlap) + 2).map { nr => (id.toString + nr.toString ).toInt}
+    (id, BaseTreeNode(id, parent.id, values))
   }
 
   //Converts base structure to something usable (should always be deterministic)

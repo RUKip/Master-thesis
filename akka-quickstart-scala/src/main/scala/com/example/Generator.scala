@@ -1,5 +1,7 @@
 package com.example
 
+import scala.annotation.tailrec
+
 object Generator extends App {
 
   val threshold :Int = 3
@@ -9,17 +11,20 @@ object Generator extends App {
     createTree(id)
   })
 
+  @tailrec
   def createTree(id: Int): Unit = {
     println("Trying to generate...")
-    val base = InitializationHelper.createTreeStructure(3, 4, 1, 1, 1, 10)
-    if (base.size < threshold) {
-      createTree(id)
-    } else {
-      println("Created base: " + base.toMap)
-      val file_name = "generated_trees/" + id + "_generated_tree.json"
-      InitializationHelper.storeTree(base, file_name)
-      println("Finished")
-      println("***************")
+    val base = InitializationHelper.init(5, 7, 7)
+    if (base.nonEmpty) {
+      if (base.size < threshold) {
+        createTree(id)
+      } else {
+        println("Created base: " + base.toMap)
+        val file_name = "generated_trees/" + id + "_generated_tree.json"
+        InitializationHelper.storeTree(base, file_name)
+        println("Finished")
+        println("***************")
+      }
     }
   }
 }

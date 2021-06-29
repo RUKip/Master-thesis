@@ -10,13 +10,17 @@ case class TreeNode(
                      child_connected: Map[Int, List[Int]]
                    ) {
 
-  def getGraphNodes: Seq[Variable] = {
+  def getFullGraphVariables: Seq[Variable] = {
     graph_variables.map(variable => {
       full_graph_mapping.get(variable) match {
         case Some(value) => value
         case None => throw new Exception("Could not match members to graph nodes")
       }
     })
+  }
+
+  def getBareFullGraphVariables: Map[Int, String] = {
+    getFullGraphVariables.map(variable => variable.id -> variable.color).toMap
   }
 
   //TODO: maybe dont need this

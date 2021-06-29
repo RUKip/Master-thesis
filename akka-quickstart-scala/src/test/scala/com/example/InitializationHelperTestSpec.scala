@@ -12,7 +12,8 @@ class InitializationHelperTestSpec  extends AnyWordSpec
 
   "should load some tree as before storing" in {
     //    val base = InitializationHelper.generateBase(0, Range(1, 10), 3, List())
-    val base = InitializationHelper.createTreeStructure(3,4,1,1,1,10)
+    //    val base = InitializationHelper.createTreeStructure(3,4,1,1,1,10)
+    val base = InitializationHelper.init()
     println(base.toMap)
     val tree = InitializationHelper.createUsableTree(base)
     println("******")

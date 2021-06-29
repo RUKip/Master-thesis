@@ -1,8 +1,24 @@
-name := "akka-quickstart-scala"
+import sbtassembly.AssemblyPlugin.assemblySettings
+assemblySettings
+
+name := "cop-solver"
 
 version := "1.0"
 
 scalaVersion := "2.13.1"
+
+lazy val commonSettings = Seq(
+  organization := "com.example",
+  version := "0.1.0-SNAPSHOT"
+)
+
+assembly / mainClass := Some("com.example.Main")
+
+assemblyMergeStrategy in assembly := {
+  case n if n.startsWith("reference.conf") => MergeStrategy.concat
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}
 
 lazy val akkaVersion = "2.6.12"
 

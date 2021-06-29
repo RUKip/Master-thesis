@@ -9,21 +9,21 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 class SolutionNode(val solution: Solution, val tree_node_children_ids: List[Int], val parent_node: ActorRef[NodeSearch.Event], val context: ActorContext[SolutionEvent]) {
 
   def sendSolution(solution: Solution, actorRef: ActorRef[Node.Event], intersection_variables: List[Int]): Unit = {
-    context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef)
-    actorRef ! Node.ReceiveSolution(getSpecificMapping(solution, intersection_variables), context.self)
+    //context.log.info("Trying to send solution " + solution.id + " , to actor " + actorRef)
+    actorRef ! Node.ReceiveSolution(getSpecificMapping(solution.bareColorMapping(), intersection_variables), context.self)
   }
 
   def receive(final_solution: Solution, optimal_solutions: List[(Map[Int, String], Int)]): Behavior[SolutionEvent] = {
     if (optimal_solutions.size == tree_node_children_ids.size) {
       val new_final_solution = final_solution.aggregateSolution(optimal_solutions)
-      context.log.info("Done aggregating, sending optimal solution {}", new_final_solution.bareColorMapping())
+//      context.log.info("Done aggregating, sending optimal solution {}", new_final_solution.bareColorMapping()) //Verbose version
       parent_node ! NodeSearch.SendOptimalSolution(Option(new_final_solution.bareColorMapping()))
       Behaviors.stopped
     } else {
       Behaviors.receive { (context, message) =>
         message match {
           case SendSolution(optimal_solution: Map[Int, String], score: Int) =>
-            context.log.info("Received a solution: {} {}", optimal_solution, score)
+            //context.log.info("Received a solution: {} {}", optimal_solution, score)
             if (optimal_solution.isEmpty) {
               parent_node ! NodeSearch.SendOptimalSolution(None)
               Behaviors.stopped
@@ -39,9 +39,9 @@ class SolutionNode(val solution: Solution, val tree_node_children_ids: List[Int]
   }
 
   //Returns subset of full solution mapping (so to only send the values that are intersecting)
-  def getSpecificMapping(solution: Solution, intersection_variables: List[Int]): Map[Int, String] = {
+  def getSpecificMapping(solution: Map[Int, String], intersection_variables: List[Int]): Map[Int, String] = {
     val map: Map[Int, String] = intersection_variables.map(variable_id =>
-      (variable_id -> solution.bareColorMapping()(variable_id))
+      (variable_id -> solution(variable_id))
     ).toMap
     map
   }
