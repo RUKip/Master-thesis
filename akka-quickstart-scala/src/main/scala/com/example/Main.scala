@@ -5,7 +5,8 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.typed.{Cluster, JoinSeedNodes}
 import com.example.actors.{NodeSearch, TopLevel}
 import com.typesafe.config.ConfigFactory
-import jdk.nashorn.internal.runtime.ScriptingFunctions.exec
+
+import java.net.InetAddress
 
 object Main extends App {
 //
@@ -19,7 +20,7 @@ object Main extends App {
       val tree_decomposition = InitializationHelper.createUsableTree(base)
 
       val hostname = System.getProperty("hostname")
-      val current_hostname = sys.env("hostname")
+      val current_hostname = InetAddress.getLocalHost.getHostAddress
 
       if (hostname == current_hostname) {
         startup("master", 25252, tree_decomposition)
@@ -36,12 +37,13 @@ object Main extends App {
       akka.cluster.roles = [$role]
       """).withFallback(ConfigFactory.load())
 
-        val nodes = System.getProperty("hostname")
+        val nodes = System.getProperty("nodes")
 
         // Create an Akka system
         val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, nodes.toInt), name = "COPSolver", config = config)
 
-        val list: List[Address] = List(System.getProperty("hostname")).map(AddressFromURIString.parse)
+        val seed_node = "akka://COPSolver@" + System.getProperty("hostname") + ":" + port
+        val list: List[Address] = List(seed_node).map(AddressFromURIString.parse)
         Cluster(system).manager ! JoinSeedNodes(list)
       }
 }
