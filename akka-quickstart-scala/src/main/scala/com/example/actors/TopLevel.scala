@@ -31,7 +31,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
             case (id, node) =>
               node.tree_children.isEmpty
           }
-          buildNodeStructureRandom(leaf_nodes, listings)
+          buildNodeStructureCount(leaf_nodes, listings)
         } else {
           Behaviors.same
         }
@@ -41,7 +41,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   /** Deployment algorithm that decides node division */
-  def buildNodeStructureRandom(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
+  def buildNodeStructureCount(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
     var actor_nodes = topLevelActors.iterator
     nodes.foreach { case (id: Int, node: TreeNode) =>
       if ( ! actor_nodes.hasNext) {
@@ -134,7 +134,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
             case (id, node) => (! storedActorReferences.contains(id)) && node.tree_children.forall(child => storedActorReferences.contains(child))
           }
           context.log.info("Next level nodes are: {}", next_level_nodes.keys)
-          buildNodeStructureRandom(next_level_nodes, topLevelActors)
+          buildNodeStructureCount(next_level_nodes, topLevelActors)
         } else {
           listenForRegister(nodes, topLevelActors, depth+1)
         }
