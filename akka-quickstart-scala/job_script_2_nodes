@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=actor_job_2n
 #SBATCH --nodes=2
-#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-type=ALL
 #SBATCH --mail-user=ruben.kip@student.rug.nl
 #SBATCH --ntasks-per-node=1
 #SBATCH --partition=short
