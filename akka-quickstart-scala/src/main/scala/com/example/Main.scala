@@ -2,7 +2,7 @@ package com.example
 
 import akka.actor.{Address, AddressFromURIString}
 import akka.actor.typed.ActorSystem
-import akka.cluster.typed.{Cluster, JoinSeedNodes}
+import akka.cluster.typed.{Cluster, Join, JoinSeedNodes}
 import com.example.actors.{NodeSearch, TopLevel}
 import com.typesafe.config.ConfigFactory
 
@@ -23,9 +23,11 @@ object Main extends App {
       val current_hostname = InetAddress.getLocalHost.getHostAddress
 
       if (hostname == current_hostname) {
-        startup("master", 25252, tree_decomposition)
+        println("Starting master")
+        startup("master", 2552, tree_decomposition)
       } else {
-        startup("worker", 25252, tree_decomposition)
+        println("Starting worker")
+        startup("worker", 2552, tree_decomposition)
       }
 
       //Divide here the nodes over the cluster based on tree-decomposition
@@ -38,11 +40,12 @@ object Main extends App {
       """).withFallback(ConfigFactory.load())
 
         val nodes = System.getProperty("nodes")
+        val deployment_type = System.getProperty("deployment")
 
         // Create an Akka system
-        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, nodes.toInt), name = "COPSolver", config = config)
+        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, nodes.toInt, deployment_type), name = "COPSolver", config = config)
 
-        val seed_node = "akka://COPSolver@" + System.getProperty("hostname") + ":" + port
+        val seed_node = System.getProperty("akka.cluster.seed-nodes.0")
         val list: List[Address] = List(seed_node).map(AddressFromURIString.parse)
         Cluster(system).manager ! JoinSeedNodes(list)
       }

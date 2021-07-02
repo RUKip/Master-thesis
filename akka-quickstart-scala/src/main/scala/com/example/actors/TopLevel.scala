@@ -16,7 +16,7 @@ import java.util.Locale
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int) {
+class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int, deployment_type: String) {
 
   def receive(): Behavior[SolutionNode.SolutionEvent] ={
     Behaviors.receiveMessage {
@@ -31,7 +31,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
             case (id, node) =>
               node.tree_children.isEmpty
           }
-          buildNodeStructureCount(leaf_nodes, listings)
+          deploy(leaf_nodes, listings)
         } else {
           Behaviors.same
         }
@@ -134,10 +134,18 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
             case (id, node) => (! storedActorReferences.contains(id)) && node.tree_children.forall(child => storedActorReferences.contains(child))
           }
           context.log.info("Next level nodes are: {}", next_level_nodes.keys)
-          buildNodeStructureCount(next_level_nodes, topLevelActors)
+          deploy(next_level_nodes, topLevelActors)
         } else {
           listenForRegister(nodes, topLevelActors, depth+1)
         }
+    }
+  }
+
+  def deploy(nodes: Map[Int, TreeNode], actors: Set[ActorRef[SolutionEvent]]) = {
+    deployment_type match {
+      case "random" => buildNodeStructureCount(nodes, actors)
+      case "weight" => buildNodeStructureWeight(nodes, actors)
+      case "branch" => buildNodeStructureBranch(nodes, actors)
     }
   }
 
@@ -165,6 +173,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def startAlgorithm(root_actor: ActorRef[Node.Event], topLevelActors: Set[ActorRef[SolutionEvent]]):  Behavior[SolutionNode.SolutionEvent] = {
+    context.log.info("Starting algorithm")
     val start_time = Instant.now()
 
     //This part only has to run for one TopLevel in the distributed actorsystem
@@ -200,11 +209,12 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
       DateTimeFormatter.ofPattern("yyyy-MM-dd_hh-mm-ss")
         .withLocale( Locale.UK )
         .withZone( ZoneId.systemDefault() )
-    val file = new File("last_result_" + formatter.format(time_stamp) + ".txt")
+    val file = new File("/home/s2756781/last_result_" + formatter.format(time_stamp) + ".txt")
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write("Duration: " + time
       + ", score: " + score
       + ", Nr of cluster nodes: " + nr_of_cluster_nodes
+      + ", Deployement type: " + deployment_type
       + ", Solution: " + solution.toString()
     )
     bw.close()
@@ -221,7 +231,7 @@ object TopLevel {
   val topLevelServiceKey: ServiceKey[SolutionEvent] = ServiceKey[SolutionEvent]("TopLevel")
   var storedActorReferences: Map[Int, ActorRef[Node.Event]] = Map()
 
-  def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int): Behavior[SolutionNode.SolutionEvent] =
+  def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int, deployment_type: String): Behavior[SolutionNode.SolutionEvent] =
     Behaviors.setup[SolutionNode.SolutionEvent] { context =>
 
       //context.log.info("starting toplevel actor")
@@ -232,7 +242,7 @@ object TopLevel {
       context.system.receptionist ! Receptionist
         .Register(topLevelServiceKey, context.self)
 
-      val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes)
+      val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes, deployment_type)
 
       if (Cluster(context.system).selfMember.hasRole("master")) {
         context.system.receptionist ! Receptionist.Subscribe(topLevelServiceKey, listingAdapter)

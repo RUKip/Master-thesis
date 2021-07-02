@@ -7,6 +7,4 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --partition=short
 
-hostname = %HOSTNAME%
-
-srun test-run
+srun java -jar -Dakka.cluster.seed-nodes.0="akka://COPSolver@$(hostname -i):2552" -Dnodes=2 -Dhostname=$(hostname -i) -Ddeployment="random" cop-solver-assembly-1.0.jar

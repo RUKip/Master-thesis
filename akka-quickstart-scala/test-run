@@ -1,4 +1,3 @@
 #!/bin/bash
 
-echo %HOSTNAME% >> test_run.txt
-java -jar -Dakka.cluster.seed-nodes.0="akka.tcp://COPSolver@${hostname}:2552" -Dnodes=2 -Dhostname=hostname cop-solver-assembly-1.0.jar
+java -jar -Dakka.cluster.seed-nodes.0="akka://COPSolver@$(hostname -i):2552" -Dnodes=2 -Dhostname=$(hostname -i) -Ddeployment="random" cop-solver-assembly-1.0.jar

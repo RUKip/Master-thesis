@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=actor_job_4
+#SBATCH --job-name=actor_job_4n
 #SBATCH --nodes=4
 #SBATCH --ntasks-per-node=1
 
@@ -8,6 +8,4 @@
 #SBATCH --mail-user=ruben.kip@student.rug.nl
 #SBATCH --partition=short
 
-hostname = %HOSTNAME%
-
-srun java -jar -Dakka.cluster.seed-nodes.0="akka.tcp://COPSolver@${hostname}:2552" -Dnodes=4 -Dhostname=hostname cop-solver-assembly-1.0.jar
+srun java -jar -Dakka.cluster.seed-nodes.0="akka.tcp://COPSolver@$(hostname -i):2552" -Dnodes=4 -Dhostname=$(hostname -i):2552 -Ddeployment="random" cop-solver-assembly-1.0.jar
