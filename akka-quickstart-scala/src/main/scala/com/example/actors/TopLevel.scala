@@ -54,20 +54,21 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   //TODO: test
+  /** Deployment, that assigns a weight to every node and divides the weight over the cluster nodes  */
   def buildNodeStructureWeight(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-    val weighted_map: Map[Int, (Int, TreeNode)] = nodes.map { case (key: Int, value: TreeNode) =>
+    val weighted_nodes: Map[Int, (Int, TreeNode)] = nodes.map { case (key: Int, value: TreeNode) =>
       (key -> (calculateWeight(value, nodes, 1), value))
     }
 
-    val actors = mutable.PriorityQueue.empty[(Int, ActorRef[SolutionEvent])](
+    val weight_ordered_actors = mutable.PriorityQueue.empty[(Int, ActorRef[SolutionEvent])](
       implicitly[Ordering[(Int, ActorRef[SolutionEvent])]].reverse
     )
 
-    topLevelActors.foreach { actor => actors.enqueue((0, actor))}
-    weighted_map.foreach { case (key, (weight, node)) =>
-      val next_actor = actors.dequeue()
-      actors.enqueue((next_actor._1 + weight, next_actor._2))
-      spawnAndRegister(node, next_actor._2, context)
+    topLevelActors.foreach { actor => weight_ordered_actors.enqueue((0, actor))}
+    weighted_nodes.foreach { case (key, (weight, node)) =>
+      val lowest_weight_actor = weight_ordered_actors.dequeue()
+      weight_ordered_actors.enqueue((lowest_weight_actor._1 + weight, lowest_weight_actor._2))
+      spawnAndRegister(node, lowest_weight_actor._2, context)
     }
     listenForRegister(nodes, topLevelActors, 1)
   }
@@ -80,20 +81,22 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }
   }
 
+  //TODO: test
+  /** Deployment, that tries to split up the whole problem in N connected subtrees/branches, where N is the amount of cluster nodes */
   def buildNodeStructureBranch(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-    //TODO: test
     var new_nodes: Map[Int, TreeNode] = nodes
     val all_nodes = nodes.values
+
+    //Take leaf nodes, divide them over all cluster nodes, then iterate up for each avoiding conflicting parents
     val leaf_nodes = all_nodes.filter { node => node.tree_children.isEmpty }
-
     val nodes_per_actor = (leaf_nodes.size + topLevelActors.size - 1) / topLevelActors.size
-
     val leaf_per_actor = leaf_nodes.grouped(nodes_per_actor)
 
     val branches_per_actor = topLevelActors.zip(
       leaf_per_actor.flatMap { leaves =>
         leaves.map { leaf =>
           val branch = getBranch(new_nodes, leaf, Map(leaf.id -> leaf))
+          //Remove parents, that are already claimed
           new_nodes = nodes.toSet.diff(branch.toSet).toMap
           branch
         }
@@ -141,7 +144,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }
   }
 
-  def deploy(nodes: Map[Int, TreeNode], actors: Set[ActorRef[SolutionEvent]]) = {
+  def deploy(nodes: Map[Int, TreeNode], actors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
     deployment_type match {
       case "random" => buildNodeStructureCount(nodes, actors)
       case "weight" => buildNodeStructureWeight(nodes, actors)
