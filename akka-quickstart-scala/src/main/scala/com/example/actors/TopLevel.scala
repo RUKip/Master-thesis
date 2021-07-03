@@ -206,16 +206,38 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }
   }
 
+  val COLOR_SCORE_MAPPING = Map(
+    ("red" -> 5),
+    ("blue" -> 4),
+    ("yellow" -> 1),
+    ("green" -> 2),
+    ("white" -> 0),
+    ("black" -> 0),
+    ("orange" -> 2)
+  )
+
+  def calcScore(color_mapping: Map[Int, String]): Int = {
+    var score: Int = 0
+    color_mapping.foreach {
+      case (_, color) =>
+        score += COLOR_SCORE_MAPPING.getOrElse(color, 0)
+    }
+    score
+  }
+
   def writeResults(solution: Map[Int, String], score: Int, time: Long): Unit = {
+    val recalculated_score = calcScore(solution)
+
     val time_stamp = Instant.now()
     val formatter: DateTimeFormatter =
       DateTimeFormatter.ofPattern("yyyy-MM-dd_hh-mm-ss")
         .withLocale( Locale.UK )
         .withZone( ZoneId.systemDefault() )
-    val file = new File("/home/s2756781/last_result_" + formatter.format(time_stamp) + ".txt")
+    val file = new File("last_result_" + formatter.format(time_stamp) + ".txt")
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write("Duration: " + time
       + ", score: " + score
+      + ", r-score: " + recalculated_score
       + ", Nr of cluster nodes: " + nr_of_cluster_nodes
       + ", Deployement type: " + deployment_type
       + ", Solution: " + solution.toString()

@@ -33,7 +33,9 @@ class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
           )
           receive(new_node, solution_id+1, all_recorded_goods, all_recorded_no_goods)
         case SendRecording(recorded_goods, recorded_no_goods) =>
-          receive(tree_node, solution_id, mergeRecordedGoods(all_recorded_goods, recorded_goods), all_recorded_no_goods ++ recorded_no_goods)
+          //mergeRecordedGoods(all_recorded_goods, recorded_goods)
+          //all_recorded_goods ++ recorded_goods
+          receive(tree_node, solution_id, all_recorded_goods ++ recorded_goods, all_recorded_no_goods ++ recorded_no_goods)
         case Terminate() =>
           //context.log.info("Terminating..")
           child_refs.keys foreach { replyTo =>

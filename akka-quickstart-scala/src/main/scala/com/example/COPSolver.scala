@@ -10,14 +10,14 @@ import java.net.InetAddress
 
 object COPSolver extends App {
 //
-//    //Init graph and tree
-//    val graph: Map[Int, Variable] = InitializationHelper.initAGraph()
-//
-//    //Calculate graph tree-decomposition
-//    val (root_node, tree_decomposition): (TreeNode, Map[Int, TreeNode]) = InitializationHelper.getHTD(graph)
+    //Init graph and tree
+    val graph: Map[Int, Variable] = InitializationHelper.initAGraph()
 
-      val base = InitializationHelper.loadTree("generated_trees/1_generated_tree.json")
-      val tree_decomposition = InitializationHelper.createUsableTree(base)
+    //Calculate graph tree-decomposition
+    val (root_node, tree_decomposition): (TreeNode, Map[Int, TreeNode]) = InitializationHelper.getHTD(graph)
+
+//      val base = InitializationHelper.loadTree("generated_trees/1_generated_tree.json")
+//      val tree_decomposition = InitializationHelper.createUsableTree(base)
 
 //      val hostname = System.getProperty("hostname")
 //      val current_hostname = InetAddress.getLocalHost.getHostAddress

@@ -34,25 +34,27 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     if (solutions.nonEmpty) {
       val solution: Map[Int, String] = solutions.head
       val new_node: TreeNode = node.updateNodes(solution)
-      val applicable_solution = new_node.graph_variables.map(id =>(id -> new_node.full_graph_mapping(id))).toMap
+      val applicable_solution = new_node.graph_variables.map(id =>(id -> new_node.full_graph_mapping(id))).toMap //TODO: what about this? 6 is missing when using good recording how?
       val solution_id = node.id.toString + "_" + solutions.size
 
-//      if (recorded_no_goods.hasRecordedNoGood(solution)) {
-//        //Solution is in recorded no good, so skip
-//        //context.log.info("No good found for: {}", solution)
-//        mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
-//      } else {
-//        val (recorded_score, recording) = recorded_goods.hasRecordedGood(solution)
-//        if (recorded_score >= 0) {
-//          val (new_recorded_score, new_recorded_solution, new_recorded_goods) = recorded_goods.compareLocalGood(solution, recording, recorded_score, calcScore)
-//          //context.log.info("Good found for: {} with score: {}", solution, recorded_score)
-//
-//          if (best_score >= recorded_score) {
-//            mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, recorded_no_goods)
-//          } else {
-//            mainLoop(context, Option(new_recorded_solution), new_recorded_score, solutions.tail, new_recorded_goods, recorded_no_goods)
-//          }
-//        } else {
+      if (recorded_no_goods.hasRecordedNoGood(solution)) {
+        //Solution is in recorded no good, so skip
+        //context.log.info("No good found for: {}", solution)
+        mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
+      } else {
+        //TODO: this part is related to the bug (maybe scoring/merging?), and the bug is that false combinations are passed, eg. that are not possible!
+        val (recorded_score, recording_solution): (Int, Map[Int, String]) = recorded_goods.hasRecordedGood(solution)
+
+        if (recorded_score >= 0) {
+          context.log.info("Good solution: {}", recording_solution ++ solution)
+          if (best_score >= recorded_score) {
+           // context.log.info("Not accepted {} - {} under review: {}, recording {}, its full answer fits: {}", recorded_score, best_score, solution, recorded_goods.getRecording(solution), recording_solution)
+            mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
+          } else {
+            //TODO: what todo here, we would like to merge the recording score with the full solution score? Or not (think now the latter)?
+            mainLoop(context, Option(recording_solution ++ solution), recorded_score, solutions.tail, recorded_goods, recorded_no_goods)
+          }
+        } else {
           val solution_actor = context.spawn(
             SolutionNode(Solution(solution_id, new_node, applicable_solution, 0), new_node.tree_children, context.self, child_refs),
             solution_id
@@ -63,7 +65,9 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
                 val new_solution: Map[Int, String] = if (received_solution.isEmpty) Map() else received_solution.get
                 val score = this.calcScore(new_solution)
 
-                val new_recorded_goods = if (received_solution.isEmpty) recorded_goods else recorded_goods.recordGood(solution, new_solution, score)
+                context.log.info("Receive solution (normal): {}", new_solution)
+
+                val new_recorded_goods = if (received_solution.isEmpty) recorded_goods else recorded_goods.recordGood(new_solution, score, context)
                 val new_recorded_no_goods = if (received_solution.isEmpty) recorded_no_goods.recordNoGood(solution) else recorded_no_goods
 
                 if (score >= best_score) {
@@ -86,8 +90,8 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
                 Behaviors.stopped
             }
           }
-//        }
-//      }
+        }
+      }
     } else {
       //context.log.info("Found local best solution: {}, score: {}, stopping...", best_solution, best_score)
       parent_node ! Node.SendRecording(recorded_goods.asBasic(), recorded_no_goods.asBasic())
