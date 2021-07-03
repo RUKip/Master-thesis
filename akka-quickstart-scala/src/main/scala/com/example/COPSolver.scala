@@ -24,8 +24,10 @@ object COPSolver extends App {
 
 //      if (hostname == current_hostname) {
         println("Starting master")
-        startup("master", 2552, tree_decomposition)
-//      } else {
+        startup("master", 2551, tree_decomposition)
+        startup("worker", 2552, tree_decomposition)
+
+  //      } else {
 //        println("Starting worker")
 //        startup("worker", 2552, tree_decomposition)
 //      }

@@ -188,10 +188,10 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     Behaviors.receive { (ctx, message) =>
       message match {
         case SendSolution(solution: Map[Int, String], score) =>
-          //context.log.info("Final solution is: {} {}", solution, score)
+          context.log.info("Final solution is: {} {}", solution, score)
           val finish_time = Instant.now()
           val duration = Duration.between(start_time, finish_time).toMillis/1000
-          //context.log.info("Execution took: {} seconds", duration)
+          context.log.info("Execution took: {} seconds", duration)
           writeResults(solution, score, duration)
 
           //Terminate all still running tree nodes
