@@ -37,22 +37,22 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
       val applicable_solution = new_node.graph_variables.map(id =>(id -> new_node.full_graph_mapping(id))).toMap
       val solution_id = node.id.toString + "_" + solutions.size
 
-      if (recorded_no_goods.hasRecordedNoGood(solution)) {
-        //Solution is in recorded no good, so skip
-        //context.log.info("No good found for: {}", solution)
-        mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
-      } else {
-        val (recorded_score, recording) = recorded_goods.hasRecordedGood(solution)
-        if (recorded_score >= 0) {
-          val (new_recorded_score, new_recorded_solution, new_recorded_goods) = recorded_goods.compareLocalGood(solution, recording, recorded_score, calcScore)
-          //context.log.info("Good found for: {} with score: {}", solution, recorded_score)
-
-          if (best_score >= recorded_score) {
-            mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, recorded_no_goods)
-          } else {
-            mainLoop(context, Option(new_recorded_solution), new_recorded_score, solutions.tail, new_recorded_goods, recorded_no_goods)
-          }
-        } else {
+//      if (recorded_no_goods.hasRecordedNoGood(solution)) {
+//        //Solution is in recorded no good, so skip
+//        //context.log.info("No good found for: {}", solution)
+//        mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
+//      } else {
+//        val (recorded_score, recording) = recorded_goods.hasRecordedGood(solution)
+//        if (recorded_score >= 0) {
+//          val (new_recorded_score, new_recorded_solution, new_recorded_goods) = recorded_goods.compareLocalGood(solution, recording, recorded_score, calcScore)
+//          //context.log.info("Good found for: {} with score: {}", solution, recorded_score)
+//
+//          if (best_score >= recorded_score) {
+//            mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, recorded_no_goods)
+//          } else {
+//            mainLoop(context, Option(new_recorded_solution), new_recorded_score, solutions.tail, new_recorded_goods, recorded_no_goods)
+//          }
+//        } else {
           val solution_actor = context.spawn(
             SolutionNode(Solution(solution_id, new_node, applicable_solution, 0), new_node.tree_children, context.self, child_refs),
             solution_id
@@ -86,8 +86,8 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
                 Behaviors.stopped
             }
           }
-        }
-      }
+//        }
+//      }
     } else {
       //context.log.info("Found local best solution: {}, score: {}, stopping...", best_solution, best_score)
       parent_node ! Node.SendRecording(recorded_goods.asBasic(), recorded_no_goods.asBasic())

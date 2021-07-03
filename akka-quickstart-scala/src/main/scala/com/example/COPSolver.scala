@@ -8,7 +8,7 @@ import com.typesafe.config.ConfigFactory
 
 import java.net.InetAddress
 
-object Main extends App {
+object COPSolver extends App {
 //
 //    //Init graph and tree
 //    val graph: Map[Int, Variable] = InitializationHelper.initAGraph()
@@ -19,16 +19,16 @@ object Main extends App {
       val base = InitializationHelper.loadTree("generated_trees/1_generated_tree.json")
       val tree_decomposition = InitializationHelper.createUsableTree(base)
 
-      val hostname = System.getProperty("hostname")
-      val current_hostname = InetAddress.getLocalHost.getHostAddress
+//      val hostname = System.getProperty("hostname")
+//      val current_hostname = InetAddress.getLocalHost.getHostAddress
 
-      if (hostname == current_hostname) {
+//      if (hostname == current_hostname) {
         println("Starting master")
         startup("master", 2552, tree_decomposition)
-      } else {
-        println("Starting worker")
-        startup("worker", 2552, tree_decomposition)
-      }
+//      } else {
+//        println("Starting worker")
+//        startup("worker", 2552, tree_decomposition)
+//      }
 
       //Divide here the nodes over the cluster based on tree-decomposition
       def startup(role: String, port: Int, tree_nodes: Map[Int, TreeNode]): Unit = {
@@ -39,14 +39,11 @@ object Main extends App {
       akka.cluster.roles = [$role]
       """).withFallback(ConfigFactory.load())
 
-        val nodes = System.getProperty("nodes")
-        val deployment_type = System.getProperty("deployment")
-
         // Create an Akka system
-        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, nodes.toInt, deployment_type), name = "COPSolver", config = config)
+        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, 2, "random"), name = "COPSolver", config = config)
 
-        val seed_node = System.getProperty("akka.cluster.seed-nodes.0")
-        val list: List[Address] = List(seed_node).map(AddressFromURIString.parse)
-        Cluster(system).manager ! JoinSeedNodes(list)
+//        val seed_node = System.getProperty("akka.cluster.seed-nodes.0")
+//        val list: List[Address] = List(seed_node).map(AddressFromURIString.parse)
+//        Cluster(system).manager ! JoinSeedNodes(list)
       }
 }
