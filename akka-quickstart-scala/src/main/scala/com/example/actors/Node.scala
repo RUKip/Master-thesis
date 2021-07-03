@@ -33,7 +33,7 @@ class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
           )
           receive(new_node, solution_id+1, all_recorded_goods, all_recorded_no_goods)
         case SendRecording(recorded_goods, recorded_no_goods) =>
-          receive(tree_node, solution_id, mergeRecordedGoods(all_recorded_goods, recorded_goods), all_recorded_no_goods ++ recorded_no_goods)
+          receive(tree_node, solution_id, all_recorded_goods ++ recorded_goods, all_recorded_no_goods ++ recorded_no_goods)
         case Terminate() =>
           //context.log.info("Terminating..")
           child_refs.keys foreach { replyTo =>
@@ -45,22 +45,6 @@ class Node(child_refs: Map[ActorRef[Node.Event], List[Int]]) {
           Behaviors.stopped
       }
     }
-  }
-
-  def mergeRecordedGoods(all_recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])], recorded_goods: Map[List[(Int, String)], (Int, Map[Int, String])]): Map[List[(Int, String)], (Int, Map[Int, String])] = {
-    val replace: Map[List[(Int, String)], (Int, Map[Int, String])] = recorded_goods.map { case (key, value) =>
-      if (all_recorded_goods.contains(key)) {
-        val recording = all_recorded_goods(key)
-        if (recording._1 < value._1) {
-          (key, value)
-        } else {
-          (key, recording)
-        }
-      } else {
-        (key, value)
-      }
-    }
-    all_recorded_goods ++ replace
   }
 }
 

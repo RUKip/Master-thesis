@@ -24,17 +24,6 @@ case class RecordedGoods(recordedGoods: Map[List[(Int, String)], (Int, Map[Int, 
     recordedGoods.getOrElse(recording, (-1, Map()))
   }
 
-  /** For comparing local good vs new good */
-  def compareLocalGood(solution: Map[Int, String], recording: Map[Int, String], recorded_score: Int, calcScore: (Map[Int, String]) => Int): (Int, Map[Int, String], RecordedGoods) = {
-    val local_solution = recording ++ solution
-    val local_score = calcScore(local_solution)
-    if (local_score > recorded_score) {
-      (local_score, local_solution, recordGood(solution, local_solution, local_score))
-    } else {
-      (recorded_score, recording, this)
-    }
-  }
-
   def asBasic(): Map[List[(Int, String)], (Int, Map[Int, String])] = {
     recordedGoods
   }

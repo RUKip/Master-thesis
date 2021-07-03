@@ -42,15 +42,12 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
         //context.log.info("No good found for: {}", solution)
         mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
       } else {
-        val (recorded_score, recording) = recorded_goods.hasRecordedGood(solution)
+        val (recorded_score, recording_solution): (Int, Map[Int, String]) = recorded_goods.hasRecordedGood(solution)
         if (recorded_score >= 0) {
-          val (new_recorded_score, new_recorded_solution, new_recorded_goods) = recorded_goods.compareLocalGood(solution, recording, recorded_score, calcScore)
-          //context.log.info("Good found for: {} with score: {}", solution, recorded_score)
-
           if (best_score >= recorded_score) {
-            mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, recorded_no_goods)
+            mainLoop(context, best_solution, best_score, solutions.tail, recorded_goods, recorded_no_goods)
           } else {
-            mainLoop(context, Option(new_recorded_solution), new_recorded_score, solutions.tail, new_recorded_goods, recorded_no_goods)
+            mainLoop(context, Option(recording_solution ++ solution), recorded_score, solutions.tail, recorded_goods, recorded_no_goods)
           }
         } else {
           val solution_actor = context.spawn(
