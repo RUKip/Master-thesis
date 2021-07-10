@@ -8,7 +8,7 @@ import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
 import com.example.actors.TopLevel.{storedActorReferences, topLevelServiceKey}
-import com.example.deployment.RandomDeployment
+import com.example.deployment.{BranchDeployment, RandomDeployment, WeightDeployment}
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.time.format.{DateTimeFormatter, FormatStyle}
@@ -35,72 +35,6 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
       case StopTopLevel() =>
        Behaviors.stopped
     }
-  }
-
-//  //TODO: test
-//  /** Deployment, that assigns a weight to every node and divides the weight over the cluster nodes  */
-//  def buildNodeStructureWeight(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-//    val weighted_nodes: Map[Int, (Int, TreeNode)] = nodes.map { case (key: Int, value: TreeNode) =>
-//      (key -> (calculateWeight(value, nodes, 1), value))
-//    }
-//
-//    val weight_ordered_actors = mutable.PriorityQueue.empty[(Int, ActorRef[SolutionEvent])](
-//      implicitly[Ordering[(Int, ActorRef[SolutionEvent])]].reverse
-//    )
-//
-//    topLevelActors.foreach { actor => weight_ordered_actors.enqueue((0, actor))}
-//    weighted_nodes.foreach { case (key, (weight, node)) =>
-//      val lowest_weight_actor = weight_ordered_actors.dequeue()
-//      weight_ordered_actors.enqueue((lowest_weight_actor._1 + weight, lowest_weight_actor._2))
-//      spawnAndRegister(node, lowest_weight_actor._2, context)
-//    }
-//    listenForRegister(nodes, topLevelActors)
-//  }
-//
-//  def calculateWeight(node: TreeNode, nodes: Map[Int, TreeNode], weight: Int): Int = {
-//    if (0 != node.parent) {
-//      calculateWeight(nodes(node.parent), nodes, weight+1)
-//    } else {
-//      weight
-//    }
-//  }
-//
-//  //TODO: test
-//  /** Deployment, that tries to split up the whole problem in N connected subtrees/branches, where N is the amount of cluster nodes */
-//  def buildNodeStructureBranch(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-//    var new_nodes: Map[Int, TreeNode] = nodes
-//    val all_nodes = nodes.values
-//
-//    //Take leaf nodes, divide them over all cluster nodes, then iterate up for each avoiding conflicting parents
-//    val leaf_nodes = all_nodes.filter { node => node.tree_children.isEmpty }
-//    val nodes_per_actor = (leaf_nodes.size + topLevelActors.size - 1) / topLevelActors.size
-//    val leaf_per_actor = leaf_nodes.grouped(nodes_per_actor)
-//
-//    val branches_per_actor = topLevelActors.zip(
-//      leaf_per_actor.flatMap { leaves =>
-//        leaves.map { leaf =>
-//          val branch = getBranch(new_nodes, leaf, Map(leaf.id -> leaf))
-//          //Remove parents, that are already claimed
-//          new_nodes = nodes.toSet.diff(branch.toSet).toMap
-//          branch
-//        }
-//      }
-//    )
-//
-//    branches_per_actor.foreach { case (actor: ActorRef[SolutionEvent], branch: Map[Int, TreeNode]) =>
-//      branch.foreach(node => spawnAndRegister(node._2, actor, context))
-//    }
-//
-//    listenForRegister(nodes, topLevelActors)
-//  }
-
-  def getBranch(nodes: Map[Int, TreeNode], current_node: TreeNode, branch: Map[Int, TreeNode]): Map[Int, TreeNode] = {
-      if (nodes.contains(current_node.parent)) {
-        val new_node = nodes(current_node.parent)
-        getBranch(nodes, new_node, branch + (current_node.parent -> new_node))
-      } else {
-        branch
-      }
   }
 
   //For every created node the master expects a register (Master only function)
@@ -132,8 +66,8 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   def startDeploy(nodes: Map[Int, TreeNode], actors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] ={
     val division: Map[Int, ActorRef[SolutionNode.SolutionEvent]] = deployment_type match {
       case "random" => RandomDeployment().deploy(nodes, actors)
-      //      case "weight" => buildNodeStructureWeight(nodes, actors)
-      //      case "branch" => buildNodeStructureBranch(nodes, actors)
+      case "weight" => WeightDeployment().deploy(nodes, actors)
+      case "branch" => BranchDeployment().deploy(nodes, actors)
       case _ =>
         context.log.error("Unknown value for deployment argument")
         Map()
@@ -216,6 +150,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
 
   def writeResults(solution: Map[Int, String], score: Int, time: Long): Unit = {
     val time_stamp = Instant.now()
+    val processors_used = Runtime.getRuntime.availableProcessors()
     val formatter: DateTimeFormatter =
       DateTimeFormatter.ofPattern("yyyy-MM-dd_hh-mm-ss")
         .withLocale( Locale.UK )
