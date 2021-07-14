@@ -7,29 +7,28 @@ import akka.cluster.typed.Cluster
 import com.example.TreeNode
 import com.example.actors.Node.{ReceiveSolution, Terminate}
 import com.example.actors.SolutionNode.{SendSolution, SolutionEvent}
-import com.example.actors.TopLevel.{TopLevelServiceKey, storedActorReferences}
+import com.example.actors.TopLevel.{storedActorReferences, topLevelServiceKey}
+import com.example.deployment.{BranchDeployment, RandomDeployment, WeightDeployment}
 
 import java.io.{BufferedWriter, File, FileWriter}
-import java.time.{Duration, Instant}
-import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import java.time.format.{DateTimeFormatter, FormatStyle}
+import java.time.{Duration, Instant, ZoneId}
+import java.util.Locale
 
-class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int) {
+class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int, deployment_type: String) {
 
   def receive(): Behavior[SolutionNode.SolutionEvent] ={
     Behaviors.receiveMessage {
       case CreateNode(id: Int, children: List[(ActorRef[Node.Event], List[Int])], reply_to: ActorRef[SolutionEvent]) =>
+//        context.log.info("Creating node: {}, send reply back to: {}", id, reply_to)
         val actor_ref = spawnNode(all_tree_nodes(id), children.toMap, context)
         reply_to ! RegisterNodeRef(id, actor_ref)
         Behaviors.same
-      case ListingResponse(TopLevelServiceKey.Listing(listings)) =>
+      case ListingResponse(topLevelServiceKey.Listing(listings)) =>
         //This should be only called by master as the master is only subscribed to these events
         if (listings.size == nr_of_cluster_nodes) {
-          val leaf_nodes = all_tree_nodes.filter {
-            case (id, node) =>
-              node.tree_children.isEmpty
-          }
-          buildNodeStructureRandom(leaf_nodes, listings)
+//          context.log.info("Trying to deploy nodes {} to listings {}", all_tree_nodes.keys, listings)
+          startDeploy(all_tree_nodes, listings)
         } else {
           Behaviors.same
         }
@@ -38,84 +37,8 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }
   }
 
-  /** Deployment algorithm that decides node division */
-  def buildNodeStructureRandom(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-    var actor_nodes = topLevelActors.iterator
-    nodes.foreach { case (id: Int, node: TreeNode) =>
-      if ( ! actor_nodes.hasNext) {
-        actor_nodes = topLevelActors.iterator
-      }
-      val actor_node = actor_nodes.next
-      spawnAndRegister(node, actor_node, context)
-    }
-    listenForRegister(nodes, topLevelActors, 1)
-  }
-
-  //TODO: test
-  def buildNodeStructureWeight(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-    val weighted_map: Map[Int, (Int, TreeNode)] = nodes.map { case (key: Int, value: TreeNode) =>
-      (key -> (calculateWeight(value, nodes, 1), value))
-    }
-
-    val actors = mutable.PriorityQueue.empty[(Int, ActorRef[SolutionEvent])](
-      implicitly[Ordering[(Int, ActorRef[SolutionEvent])]].reverse
-    )
-
-    topLevelActors.foreach { actor => actors.enqueue((0, actor))}
-    weighted_map.foreach { case (key, (weight, node)) =>
-      val next_actor = actors.dequeue()
-      actors.enqueue((next_actor._1 + weight, next_actor._2))
-      spawnAndRegister(node, next_actor._2, context)
-    }
-    listenForRegister(nodes, topLevelActors, 1)
-  }
-
-  def calculateWeight(node: TreeNode, nodes: Map[Int, TreeNode], weight: Int): Int = {
-    if (0 != node.parent) {
-      calculateWeight(nodes(node.parent), nodes, weight+1)
-    } else {
-      weight
-    }
-  }
-
-  def buildNodeStructureBranch(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] = {
-    //TODO: test
-    var new_nodes: Map[Int, TreeNode] = nodes
-    val all_nodes = nodes.values
-    val leaf_nodes = all_nodes.filter { node => node.tree_children.isEmpty }
-
-    val nodes_per_actor = (leaf_nodes.size + topLevelActors.size - 1) / topLevelActors.size
-
-    val leaf_per_actor = leaf_nodes.grouped(nodes_per_actor)
-
-    val branches_per_actor = topLevelActors.zip(
-      leaf_per_actor.flatMap { leaves =>
-        leaves.map { leaf =>
-          val branch = getBranch(new_nodes, leaf, Map(leaf.id -> leaf))
-          new_nodes = nodes.toSet.diff(branch.toSet).toMap
-          branch
-        }
-      }
-    )
-
-    branches_per_actor.foreach { case (actor: ActorRef[SolutionEvent], branch: Map[Int, TreeNode]) =>
-      branch.foreach(node => spawnAndRegister(node._2, actor, context))
-    }
-
-    listenForRegister(nodes, topLevelActors, 1)
-  }
-
-  def getBranch(nodes: Map[Int, TreeNode], current_node: TreeNode, branch: Map[Int, TreeNode]): Map[Int, TreeNode] = {
-      if (nodes.contains(current_node.parent)) {
-        val new_node = nodes(current_node.parent)
-        getBranch(nodes, new_node, branch + (current_node.parent -> new_node))
-      } else {
-        branch
-      }
-  }
-
   //For every created node the master expects a register (Master only function)
-  def listenForRegister(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]], depth: Int): Behavior[SolutionEvent] = {
+  def listenForRegister(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]], division: Map[Int, ActorRef[SolutionNode.SolutionEvent]], depth: Int): Behavior[SolutionEvent] = {
     Behaviors.receiveMessage {
       case RegisterNodeRef(id: Int, ref: ActorRef[Node.Event]) =>
         context.log.info("Registering new ref: {} with id {}", ref, id)
@@ -129,18 +52,48 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
             (parent_id -> all_tree_nodes(parent_id))
           }
           val next_level_nodes = next_parent_nodes.filter {
-            case (id, node) => (! storedActorReferences.contains(id)) && node.tree_children.forall(child => storedActorReferences.contains(child))
+            case (id, node) => (!storedActorReferences.contains(id)) && node.tree_children.forall(child => storedActorReferences.contains(child))
           }
           context.log.info("Next level nodes are: {}", next_level_nodes.keys)
-          buildNodeStructureRandom(next_level_nodes, topLevelActors)
+          deploy(next_level_nodes, topLevelActors, division, 1)
         } else {
-          listenForRegister(nodes, topLevelActors, depth+1)
+          //Not everything is registered yet so wait
+          listenForRegister(nodes, topLevelActors, division, depth+1)
         }
     }
   }
 
+  def startDeploy(nodes: Map[Int, TreeNode], actors: Set[ActorRef[SolutionEvent]]): Behavior[SolutionEvent] ={
+    val division: Map[Int, ActorRef[SolutionNode.SolutionEvent]] = deployment_type match {
+      case "random" => RandomDeployment().deploy(nodes, actors)
+      case "weight" => WeightDeployment().deploy(nodes, actors)
+      case "branch" => BranchDeployment().deploy(nodes, actors)
+      case _ =>
+        context.log.error("Unknown value for deployment argument")
+        Map()
+    }
+    if (division.isEmpty) {
+      Behaviors.stopped
+    } else {
+      val leaf_nodes = all_tree_nodes.filter {
+        case (id, node) =>
+          node.tree_children.isEmpty
+      }
+      deploy(leaf_nodes, actors, division, 1)
+    }
+  }
+
+  def deploy(nodes: Map[Int, TreeNode], cluster_refs: Set[ActorRef[SolutionEvent]], division: Map[Int, ActorRef[SolutionNode.SolutionEvent]], depth: Int): Behavior[SolutionEvent] = {
+    nodes.foreach { case (id: Int, node: TreeNode) =>
+      val cluster_ref = division(id)
+      spawnAndRegister(node, cluster_ref, context)
+    }
+    listenForRegister(nodes, cluster_refs, division, depth)
+  }
+
+  /** Send message to topLevel nodes to create node, called only by master */
   def spawnAndRegister(tree_node: TreeNode, topLevelActor: ActorRef[SolutionEvent], context: ActorContext[SolutionEvent]): Unit = {
-    //context.log.info("Creating node with id: {} and childeren {} at {}", tree_node.id, tree_node.tree_children, topLevelActor)
+//    context.log.info("Creating node with id: {} and childeren {} at {}", tree_node.id, tree_node.tree_children, topLevelActor)
     if (context.self == topLevelActor) {
       val actor_ref = spawnNode(all_tree_nodes(tree_node.id), matchToActorRef(tree_node.id, tree_node.tree_children), context)
       context.self ! RegisterNodeRef(tree_node.id, actor_ref)
@@ -149,11 +102,13 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }
   }
 
+  /** Spawn node */
   def spawnNode(tree_node: TreeNode, children: Map[ActorRef[Node.Event], List[Int]], context: ActorContext[SolutionEvent]): ActorRef[Node.Event] = {
     //context.log.info("Spawning actor for tree_node: " + tree_node.id.toString)
     context.spawn(Node(tree_node, children), tree_node.id.toString)
   }
 
+  /** Create for a tree node, its children with mapping of its location (actoref) (depends on actoref of children)*/
   def matchToActorRef(tree_id: Int, children: List[Int]): Map[ActorRef[Node.Event], List[Int]] = {
     val tree_node: TreeNode = all_tree_nodes(tree_id)
     children.map { id =>
@@ -163,6 +118,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def startAlgorithm(root_actor: ActorRef[Node.Event], topLevelActors: Set[ActorRef[SolutionEvent]]):  Behavior[SolutionNode.SolutionEvent] = {
+    context.log.info("Starting algorithm")
     val start_time = Instant.now()
 
     //This part only has to run for one TopLevel in the distributed actorsystem
@@ -193,9 +149,20 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
   }
 
   def writeResults(solution: Map[Int, String], score: Int, time: Long): Unit = {
-    val file = new File("last_result.txt")
+    val time_stamp = Instant.now()
+    val processors_used = Runtime.getRuntime.availableProcessors()
+    val formatter: DateTimeFormatter =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd_hh-mm-ss")
+        .withLocale( Locale.UK )
+        .withZone( ZoneId.systemDefault() )
+    val file = new File("/home/s2756781/last_result_" + formatter.format(time_stamp) + ".txt")
     val bw = new BufferedWriter(new FileWriter(file))
-    bw.write("Duration: " + time + ", score: " + score + ", Solution: " + solution.toString())
+    bw.write("Duration: " + time
+      + ", score: " + score
+      + ", Nr of cluster nodes: " + nr_of_cluster_nodes
+      + ", Deployement type: " + deployment_type
+      + ", Solution: " + solution.toString()
+    )
     bw.close()
   }
 }
@@ -207,10 +174,10 @@ final case class ListingResponse(listing: Receptionist.Listing) extends Solution
 
 object TopLevel {
 
-  val TopLevelServiceKey: ServiceKey[SolutionEvent] = ServiceKey[SolutionEvent]("TopLevel")
+  val topLevelServiceKey: ServiceKey[SolutionEvent] = ServiceKey[SolutionEvent]("TopLevel")
   var storedActorReferences: Map[Int, ActorRef[Node.Event]] = Map()
 
-  def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int): Behavior[SolutionNode.SolutionEvent] =
+  def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int, deployment_type: String): Behavior[SolutionNode.SolutionEvent] =
     Behaviors.setup[SolutionNode.SolutionEvent] { context =>
 
       //context.log.info("starting toplevel actor")
@@ -219,12 +186,12 @@ object TopLevel {
         context.messageAdapter { listing => ListingResponse(listing)}
 
       context.system.receptionist ! Receptionist
-        .Register(TopLevelServiceKey, context.self)
+        .Register(topLevelServiceKey, context.self)
 
-      val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes)
+      val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes, deployment_type)
 
       if (Cluster(context.system).selfMember.hasRole("master")) {
-        context.system.receptionist ! Receptionist.Subscribe(TopLevelServiceKey, listingAdapter)
+        context.system.receptionist ! Receptionist.Subscribe(topLevelServiceKey, listingAdapter)
       }
 
       topLevelActor.receive()
