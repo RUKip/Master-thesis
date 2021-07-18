@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#SBATCH --job-name=actor_job_1n
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=8
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ruben.kip@student.rug.nl
+#SBATCH --ntasks-per-node=1
+#SBATCH --partition=short
+
+srun java -jar -Dakka.cluster.seed-nodes.0="akka://COPSolver@$(hostname -i):2552" -Dnodes=1 -Dhostname=$(hostname -i) -Ddeployment="random" cop-solver-assembly-1.0.jar
