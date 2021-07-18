@@ -41,4 +41,8 @@ case class TreeNode(
       )}
     this.copy(full_graph_mapping = graph_mapping)
   }
+
+  def isLeaf: Boolean = {
+    tree_children.isEmpty
+  }
 }

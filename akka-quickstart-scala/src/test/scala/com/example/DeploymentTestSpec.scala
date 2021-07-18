@@ -29,6 +29,7 @@ class DeploymentTestSpec extends AnyWordSpec
 //    val (root, tree_decomposition) = InitializationHelper.getHTD(graph)
     println(tree_decomposition.keys + ", size: " + tree_decomposition.keys.size)
     val result = BranchDeployment().deploy(tree_decomposition, Set(TestInbox[SolutionEvent]().ref, TestInbox[SolutionEvent]().ref))
+    println("Size of result: " + result.size)
     result.foreach { case (k,v) =>
       println("Node " + k + " has to be deployed on: " + v)
     }

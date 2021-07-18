@@ -75,10 +75,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     if (division.isEmpty) {
       Behaviors.stopped
     } else {
-      val leaf_nodes = all_tree_nodes.filter {
-        case (id, node) =>
-          node.tree_children.isEmpty
-      }
+      val leaf_nodes = all_tree_nodes.filter(_._2.isLeaf)
       deploy(leaf_nodes, actors, division, 1)
     }
   }

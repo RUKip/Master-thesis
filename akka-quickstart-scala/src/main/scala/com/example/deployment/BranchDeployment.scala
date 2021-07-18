@@ -8,12 +8,13 @@ import com.example.TreeNode
 case class BranchDeployment() extends Deployment {
   override def deploy(nodes: Map[Int, TreeNode], topLevelActors: Set[ActorRef[SolutionEvent]]): Map[Int, ActorRef[SolutionNode.SolutionEvent]] = {
     var new_nodes: Map[Int, TreeNode] = nodes
-    val all_nodes = nodes.values
+    //Sorting for determinism
+    val all_nodes = nodes.toList.sortBy(_._1).map(_._2)
 
     //Take leaf nodes, divide them over all cluster nodes, then iterate up for each avoiding conflicting parents
-    val leaf_nodes = all_nodes.filter { node => node.tree_children.isEmpty }.toList
+    val leaf_nodes = all_nodes.filter(_.isLeaf)
 
-    val nodes_per_actor = (leaf_nodes.size + topLevelActors.size - 1) / topLevelActors.size
+    val nodes_per_actor = Math.ceil(leaf_nodes.size.toDouble / topLevelActors.size.toDouble).toInt
     val leaf_per_actor = leaf_nodes.grouped(nodes_per_actor).toList
     val branches_per_actor = topLevelActors.zip(leaf_per_actor)
 
