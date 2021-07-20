@@ -45,7 +45,7 @@ object Main extends App {
         val deployment_type = System.getProperty("deployment")
 
         // Create an Akka system
-        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, nodes.toInt, deployment_type), name = "COPSolver", config = config)
+        val system: ActorSystem[NodeSearch.Event] = ActorSystem(TopLevel(tree_nodes, nodes.toInt, deployment_type, loaded_tree), name = "COPSolver", config = config)
 
         val seed_node = System.getProperty("akka.cluster.seed-nodes.0")
         val list: List[Address] = List(seed_node).map(AddressFromURIString.parse)

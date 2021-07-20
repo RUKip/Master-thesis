@@ -124,7 +124,8 @@ object InitializationHelper {
     val chosen_overlap = if (picked_overlap < 1)  Random.nextInt(Math.max(parent.variables.size - 1, 1)) + 1 else picked_overlap
     val overlap = math.min(chosen_overlap, parent.variables.size - 1)
     val overlapped_variables = Random.shuffle(parent.variables).take(overlap)
-    val values = overlapped_variables ++ Range(1, Random.nextInt(width - overlap) + 2).map { nr => (id.toString + nr.toString ).toInt}
+//    val values = overlapped_variables ++ Range(1, Random.nextInt(width - overlap) + 2).map { nr => (id.toString + nr.toString ).toInt}
+    val values = overlapped_variables ++ Range(1, width - overlap + 1).map { nr => (id.toString + nr.toString ).toInt}
     (id, BaseTreeNode(id, parent.id, values))
   }
 

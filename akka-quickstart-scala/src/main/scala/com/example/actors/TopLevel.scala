@@ -15,7 +15,7 @@ import java.time.format.{DateTimeFormatter, FormatStyle}
 import java.time.{Duration, Instant, ZoneId}
 import java.util.Locale
 
-class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int, deployment_type: String) {
+class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Map[Int, TreeNode], val nr_of_cluster_nodes: Int, deployment_type: String, loaded_tree: String) {
 
   def receive(): Behavior[SolutionNode.SolutionEvent] ={
     Behaviors.receiveMessage {
@@ -152,7 +152,9 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
       DateTimeFormatter.ofPattern("yyyy-MM-dd_hh-mm-ss")
         .withLocale( Locale.UK )
         .withZone( ZoneId.systemDefault() )
-    val file = new File("/home/s2756781/last_result_" + formatter.format(time_stamp) + ".txt")
+    val tree_details: String = loaded_tree.split("/").reverse.head.replace(".json", "")
+    println(tree_details)
+    val file = new File("/home/s2756781/C" + nr_of_cluster_nodes + "_" + deployment_type + "_" + tree_details + "_" + formatter.format(time_stamp) + ".txt")
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write("Duration: " + time
       + ", score: " + score
@@ -174,7 +176,7 @@ object TopLevel {
   val topLevelServiceKey: ServiceKey[SolutionEvent] = ServiceKey[SolutionEvent]("TopLevel")
   var storedActorReferences: Map[Int, ActorRef[Node.Event]] = Map()
 
-  def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int, deployment_type: String): Behavior[SolutionNode.SolutionEvent] =
+  def apply(tree_nodes: Map[Int, TreeNode], nr_of_cluster_nodes: Int, deployment_type: String, loaded_tree: String): Behavior[SolutionNode.SolutionEvent] =
     Behaviors.setup[SolutionNode.SolutionEvent] { context =>
 
       //context.log.info("starting toplevel actor")
@@ -185,7 +187,7 @@ object TopLevel {
       context.system.receptionist ! Receptionist
         .Register(topLevelServiceKey, context.self)
 
-      val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes, deployment_type)
+      val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes, deployment_type, loaded_tree)
 
       context.log.info("Has role: {}" + Cluster(context.system).selfMember.getRoles)
       if (Cluster(context.system).selfMember.hasRole("master")) {
