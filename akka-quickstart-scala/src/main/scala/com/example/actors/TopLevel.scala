@@ -187,6 +187,7 @@ object TopLevel {
 
       val topLevelActor = new TopLevel(context, tree_nodes, nr_of_cluster_nodes, deployment_type)
 
+      context.log.info("Has role: {}" + Cluster(context.system).selfMember.getRoles)
       if (Cluster(context.system).selfMember.hasRole("master")) {
         context.system.receptionist ! Receptionist.Subscribe(topLevelServiceKey, listingAdapter)
       }

@@ -16,7 +16,9 @@ object Main extends App {
 //    //Calculate graph tree-decomposition
 //    val (root_node, tree_decomposition): (TreeNode, Map[Int, TreeNode]) = InitializationHelper.getHTD(graph)
 
-      val base = InitializationHelper.loadTree("generated_trees/1_generated_tree.json")
+      val loaded_tree: String = System.getProperty("tree")
+
+      val base = InitializationHelper.loadTree(loaded_tree)
       val tree_decomposition = InitializationHelper.createUsableTree(base)
 
       val hostname = System.getProperty("hostname")

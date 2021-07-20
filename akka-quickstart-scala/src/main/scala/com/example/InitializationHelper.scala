@@ -4,8 +4,8 @@ import net.liftweb.json
 import net.liftweb.json.Extraction.decompose
 import net.liftweb.json.JsonAST._
 import net.liftweb.json.JsonDSL._
-import scala.jdk.CollectionConverters._
 
+import scala.jdk.CollectionConverters._
 import java.io.{BufferedWriter, File, FileWriter}
 import scala.io.Source
 import scala.util.Random
@@ -91,7 +91,7 @@ object InitializationHelper {
     highest_id
   }
 
-  def init(max_children: Int = 3, width: Int = 5, max_depth: Int = 7): Seq[(Int, BaseTreeNode)] = {
+  def init(max_children: Int = 3, width: Int = 5, max_depth: Int = 7, overlap: Int = 0): Seq[(Int, BaseTreeNode)] = {
     highest_id = 0
     if (width > 9) {
       println("Invalid width, max width cannot be higher then 9")
@@ -99,20 +99,20 @@ object InitializationHelper {
     } else {
       val id = getId
       val root = (id, BaseTreeNode(id, 0, Range(1, 5).toList))
-      make(1, Seq(root._2), max_children, width, max_depth) :+ root
+      make(1, Seq(root._2), max_children, width, max_depth, overlap) :+ root
     }
   }
 
-  def make(depth: Int, parents: Seq[BaseTreeNode], max_children: Int, width: Int, max_depth: Int): Seq[(Int, BaseTreeNode)] = {
+  def make(depth: Int, parents: Seq[BaseTreeNode], max_children: Int, width: Int, max_depth: Int, overlap: Int): Seq[(Int, BaseTreeNode)] = {
     if (max_depth > depth) {
       parents.flatMap { parent =>
         val children = Random.nextInt(max_children)
         val treeNodes = Range(0, children).map { _ =>
           val id: Int = getId
-          val treeNode = createTreeNode(id, parent, width)
+          val treeNode = createTreeNode(id, parent, width, overlap)
           treeNode
         }
-        treeNodes ++ make(depth + 1, treeNodes.map(value => value._2), max_children, width, max_depth)
+        treeNodes ++ make(depth + 1, treeNodes.map(value => value._2), max_children, width, max_depth, overlap)
       }
     } else {
       Seq()
@@ -120,8 +120,9 @@ object InitializationHelper {
   }
 
   //Width cannot be higher then 9! else variables (id: 31, nr: 2, 312) and (id: 3, nr: 12, 312) clash
-  def createTreeNode(id: Int, parent: BaseTreeNode, width: Int): (Int, BaseTreeNode) = {
-    val overlap = math.min(Random.nextInt(Math.max(parent.variables.size - 1, 1)) + 1, parent.variables.size - 1)
+  def createTreeNode(id: Int, parent: BaseTreeNode, width: Int, picked_overlap: Int): (Int, BaseTreeNode) = {
+    val chosen_overlap = if (picked_overlap < 1)  Random.nextInt(Math.max(parent.variables.size - 1, 1)) + 1 else picked_overlap
+    val overlap = math.min(chosen_overlap, parent.variables.size - 1)
     val overlapped_variables = Random.shuffle(parent.variables).take(overlap)
     val values = overlapped_variables ++ Range(1, Random.nextInt(width - overlap) + 2).map { nr => (id.toString + nr.toString ).toInt}
     (id, BaseTreeNode(id, parent.id, values))

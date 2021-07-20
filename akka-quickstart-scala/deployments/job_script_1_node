@@ -9,4 +9,4 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --partition=short
 
-srun java -jar -Dakka.cluster.seed-nodes.0="akka://COPSolver@$(hostname -i):2552" -Dnodes=1 -Dhostname=$(hostname -i) -Ddeployment="weight" cop-solver-assembly-1.0.jar
+srun java -jar -Dakka.cluster.seed-nodes.0="akka://COPSolver@$(hostname -i):2552" -Dnodes=1 -Dhostname=$(hostname -i) -Ddeployment="$1" -Dtree="$2" cop-solver-assembly-1.0.jar

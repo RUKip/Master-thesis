@@ -25,7 +25,7 @@ class NodeTestSpec  extends AnyWordSpec
 //    println("******")
 ////    println(tree.head._2.full_graph_mapping)
 ////    tree.foreach { case (id, node) => println(id + " " + node.copy(full_graph_mapping = Map()))}
-//    val file_name = "1_generated_tree.json"
+//    val file_name = "8nodes_B5_W7_D3_C2.json"
 //    InitializationHelper.storeTree(base, file_name)
 //    val loaded_base = InitializationHelper.loadTree(file_name)
 //    assert(base.toString() == loaded_base.toString())

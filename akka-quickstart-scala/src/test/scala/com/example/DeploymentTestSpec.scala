@@ -23,7 +23,7 @@ class DeploymentTestSpec extends AnyWordSpec
   }
 
   "should return branch deployment" in {
-    val base = InitializationHelper.loadTree("generated_trees/1_generated_tree.json")
+    val base = InitializationHelper.loadTree("generated_trees/8nodes_B5_W7_D3_C2.json")
     val tree_decomposition = InitializationHelper.createUsableTree(base)
 //    val graph = InitializationHelper.initAGraph()
 //    val (root, tree_decomposition) = InitializationHelper.getHTD(graph)
@@ -36,7 +36,7 @@ class DeploymentTestSpec extends AnyWordSpec
   }
 
   "should return weight deployment" in {
-    val base = InitializationHelper.loadTree("generated_trees/1_generated_tree.json")
+    val base = InitializationHelper.loadTree("generated_trees/8nodes_B5_W7_D3_C2.json")
     val tree_decomposition = InitializationHelper.createUsableTree(base)
 //    val graph = InitializationHelper.initAGraph()
 //    val (root, tree_decomposition) = InitializationHelper.getHTD(graph)

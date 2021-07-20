@@ -9,4 +9,4 @@
 #SBATCH --mail-user=ruben.kip@student.rug.nl
 #SBATCH --partition=short
 
-srun java -jar -Dakka.cluster.seed-nodes.0="akka://COPSolver@$(hostname -i):2552" -Dnodes=4 -Dhostname=$(hostname -i) -Ddeployment="random" cop-solver-assembly-1.0.jar
+srun java -jar -Dakka.cluster.seed-nodes.0="akka://COPSolver@$(hostname -i):2552" -Dnodes=4 -Dhostname=$(hostname -i) -Ddeployment="$1" -Dtree="$2" cop-solver-assembly-1.0.jar
