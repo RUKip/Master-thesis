@@ -3,7 +3,6 @@
 target/
 .idea/
 akka-quickstart-scala/generated_trees/*
-!akka-quickstart-scala/generated_trees/1_generated_tree.json
 *.txt
 akka-quickstart-scala/test_generated_tree.json
 *.jar

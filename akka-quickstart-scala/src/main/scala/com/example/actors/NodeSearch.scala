@@ -8,6 +8,8 @@ import com.example.{RecordedGoods, RecordedNoGoods, Solution, TreeNode}
 import com.example.solver.SolverScalaWrapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
+import scala.annotation.tailrec
+
 class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int]], parent_solution_node: ActorRef[SolutionEvent], context: ActorContext[Event], parent_node: ActorRef[Node.Event]) {
 
   val COLOR_SCORE_MAPPING = Map(
@@ -30,7 +32,8 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
     score
   }
 
-  def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]], recorded_goods: RecordedGoods, recorded_no_goods: RecordedNoGoods): Behavior[Event] = {
+  @tailrec
+  final def mainLoop(context: ActorContext[NodeSearch.Event], best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]], recorded_goods: RecordedGoods, recorded_no_goods: RecordedNoGoods): Behavior[Event] = {
     if (solutions.nonEmpty) {
       val solution: Map[Int, String] = solutions.head
       val new_node: TreeNode = node.updateNodes(solution)
@@ -54,35 +57,7 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
             SolutionNode(Solution(solution_id, new_node, applicable_solution, 0), new_node.tree_children, context.self, child_refs),
             solution_id
           )
-          Behaviors.receive { (context, message) =>
-            message match {
-              case SendOptimalSolution(received_solution: Option[Map[Int, String]]) =>
-                val new_solution: Map[Int, String] = if (received_solution.isEmpty) Map() else received_solution.get
-                val score = this.calcScore(new_solution)
-
-                val new_recorded_goods = if (received_solution.isEmpty) recorded_goods else recorded_goods.recordGood(solution, new_solution, score)
-                val new_recorded_no_goods = if (received_solution.isEmpty) recorded_no_goods.recordNoGood(solution) else recorded_no_goods
-
-                if (score >= best_score) {
-                  mainLoop(context, Option(new_solution), score, solutions.tail, new_recorded_goods, new_recorded_no_goods)
-                } else {
-                  mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, new_recorded_no_goods)
-                }
-              case PrintGraph() =>
-                context.log.info(
-                  "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path:  {}",
-                  node.id,
-                  node.graph_variables,
-                  node.parent,
-                  node.tree_children,
-                  context.self.path,
-                )
-                Behaviors.same
-              case _ =>
-                context.log.error("Unexpected message: " + message)
-                Behaviors.stopped
-            }
-          }
+         receiveMessage(best_solution, best_score, solutions, recorded_goods, recorded_no_goods)
         }
       }
     } else {
@@ -94,6 +69,39 @@ class NodeSearch (node: TreeNode, child_refs: Map[ActorRef[Node.Event], List[Int
         parent_solution_node ! SolutionNode.SendSolution(best_solution.get, best_score)
       }
       Behaviors.stopped
+    }
+  }
+
+  def receiveMessage(best_solution: Option[Map[Int, String]], best_score: Int, solutions: List[Map[Int, String]], recorded_goods: RecordedGoods, recorded_no_goods: RecordedNoGoods): Behavior[NodeSearch.Event] = {
+    Behaviors.receive { (context, message) =>
+      val solution: Map[Int, String] = solutions.head
+      message match {
+        case SendOptimalSolution(received_solution: Option[Map[Int, String]]) =>
+          val new_solution: Map[Int, String] = if (received_solution.isEmpty) Map() else received_solution.get
+          val score = this.calcScore(new_solution)
+
+          val new_recorded_goods = if (received_solution.isEmpty) recorded_goods else recorded_goods.recordGood(solution, new_solution, score)
+          val new_recorded_no_goods = if (received_solution.isEmpty) recorded_no_goods.recordNoGood(solution) else recorded_no_goods
+
+          if (score >= best_score) {
+            mainLoop(context, Option(new_solution), score, solutions.tail, new_recorded_goods, new_recorded_no_goods)
+          } else {
+            mainLoop(context, best_solution, best_score, solutions.tail, new_recorded_goods, new_recorded_no_goods)
+          }
+        case PrintGraph() =>
+          context.log.info(
+            "Tree Node {}, has graph nodes: {}, parent: {}, children: {}, path:  {}",
+            node.id,
+            node.graph_variables,
+            node.parent,
+            node.tree_children,
+            context.self.path,
+          )
+          Behaviors.same
+        case _ =>
+          context.log.error("Unexpected message: " + message)
+          Behaviors.stopped
+      }
     }
   }
 

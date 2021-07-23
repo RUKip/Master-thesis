@@ -129,9 +129,10 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
         case SendSolution(solution: Map[Int, String], score) =>
           //context.log.info("Final solution is: {} {}", solution, score)
           val finish_time = Instant.now()
-          val duration = Duration.between(start_time, finish_time).toMillis/1000
+          val duration = Duration.between(start_time, finish_time).toMillis
+          val duration_seconds = duration/1000
           //context.log.info("Execution took: {} seconds", duration)
-          writeResults(solution, score, duration)
+          writeResults(solution, score, duration, duration_seconds)
 
           //Terminate all still running tree nodes
           root_actor ! Terminate()
@@ -145,7 +146,7 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     }
   }
 
-  def writeResults(solution: Map[Int, String], score: Int, time: Long): Unit = {
+  def writeResults(solution: Map[Int, String], score: Int, time: Long, time_seconds: Long): Unit = {
     val time_stamp = Instant.now()
     val processors_used = Runtime.getRuntime.availableProcessors()
     val formatter: DateTimeFormatter =
@@ -156,7 +157,8 @@ class TopLevel (val context: ActorContext[SolutionEvent], val all_tree_nodes: Ma
     println(tree_details)
     val file = new File("/home/s2756781/C" + nr_of_cluster_nodes + "_" + deployment_type + "_" + tree_details + "_" + formatter.format(time_stamp) + ".txt")
     val bw = new BufferedWriter(new FileWriter(file))
-    bw.write("Duration: " + time
+    bw.write("Duration (ms): " + time
+      + ", seconds: " + time_seconds
       + ", score: " + score
       + ", Nr of cluster nodes: " + nr_of_cluster_nodes
       + ", Deployement type: " + deployment_type
